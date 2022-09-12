@@ -75,46 +75,18 @@ class PublicCatalogsDto:
                           example="1.0.0"),
         })
 
-
-class StacIngestionDto:
-    api = Namespace('stac_ingestion',
-                    description='stac ingestion status related operations')
-    stac_ingestion_status_post = api.model(
-        'stac_ingestion_status_post', {
-            'newly_stored_collections_count':
-            fields.Integer(required=True,
-                           description='number of newly stored collections'),
-            'newly_stored_collections':
-            fields.List(fields.String,
-                        required=True,
-                        description='newly stored collections'),
-            'updated_collections_count':
-            fields.Integer(required=True,
-                           description='updated collections count'),
-            'updated_collections':
-            fields.List(fields.String,
-                        required=True,
-                        description='updated collections'),
-            'newly_stored_items_count':
-            fields.Integer(required=True,
-                           description='newly stored items count'),
-            'updated_items_count':
-            fields.Integer(required=True, description='updated items count'),
-            'already_stored_items_count':
-            fields.Integer(required=True,
-                           description='already stored items count'),
-        })
     start_stac_ingestion = api.model(
-        'start_stac_ingestion', {
-            'source_stac_catalog_url':
-            fields.String(
-                required=True,
-                description='url of the source STAC catalog',
-                example="https://planetarycomputer.microsoft.com/api/stac/v1"),
-            'target_stac_catalog_url':
-            fields.String(required=True,
-                          description='url of the destination STAC catalog',
-                          example="https://stac-api-server.azurewebsites.net"),
+        'start_stac_ingestion',
+        {
+            # 'source_stac_catalog_url':
+            # fields.String(
+            #     required=True,
+            #     description='url of the source STAC catalog',
+            #     example="https://planetarycomputer.microsoft.com/api/stac/v1"),
+            # 'target_stac_catalog_url':
+            # fields.String(required=True,
+            #               description='url of the destination STAC catalog',
+            #               example="https://stac-api-server.azurewebsites.net"),
             'update':
             fields.Boolean(required=True,
                            description='update the destination catalog'),
@@ -144,18 +116,12 @@ class StacIngestionDto:
                         description='ids of the items to be ingested',
                         example=[]),
         })
-    update_stac_collections_via_catalog_id = api.model(
-        'update_stac_collections_via_catalog_id', {
-            'source_catalog_id':
-            fields.Integer(
-                required=True,
-                description='id of the source catalog in the database',
-                example=1,
-                exclusiveMin=1),
+    update_stac_collections_specify_collection_ids = api.model(
+        'update_stac_collections_specify_collection_ids', {
             'collections':
             fields.List(
                 fields.String,
-                required=False,
+                required=True,
                 default=[],
                 example=["landsat-8-l1-c1", "sentinel-2-l1c", "landsat-c2-l2"])
         })
@@ -172,4 +138,34 @@ class StacIngestionDto:
                 required=False,
                 default=[],
                 example=["landsat-8-l1-c1", "sentinel-2-l1c", "landsat-c2-l2"])
+        })
+
+
+class StatusReportingDto:
+    api = Namespace('status_reporting',
+                    description='Status reporting related operations')
+    stac_ingestion_status_post = api.model(
+        'stac_ingestion_status_post', {
+            'newly_stored_collections_count':
+            fields.Integer(required=True,
+                           description='number of newly stored collections'),
+            'newly_stored_collections':
+            fields.List(fields.String,
+                        required=True,
+                        description='newly stored collections'),
+            'updated_collections_count':
+            fields.Integer(required=True,
+                           description='updated collections count'),
+            'updated_collections':
+            fields.List(fields.String,
+                        required=True,
+                        description='updated collections'),
+            'newly_stored_items_count':
+            fields.Integer(required=True,
+                           description='newly stored items count'),
+            'updated_items_count':
+            fields.Integer(required=True, description='updated items count'),
+            'already_stored_items_count':
+            fields.Integer(required=True,
+                           description='already stored items count'),
         })
