@@ -77,15 +77,15 @@ class PublicCatalogsDto:
 
     start_stac_ingestion = api.model(
         'start_stac_ingestion', {
-            'source_stac_catalog_url':
-            fields.String(
-                required=True,
-                description='url of the source STAC catalog',
-                example="https://planetarycomputer.microsoft.com/api/stac/v1"),
-            'target_stac_catalog_url':
-            fields.String(required=True,
-                          description='url of the destination STAC catalog',
-                          example="https://stac-api-server.azurewebsites.net"),
+            # 'source_stac_catalog_url':
+            # fields.String(
+            #     required=True,
+            #     description='url of the source STAC catalog',
+            #     example="https://planetarycomputer.microsoft.com/api/stac/v1"),
+            # 'target_stac_catalog_url':
+            # fields.String(required=True,
+            #               description='url of the destination STAC catalog',
+            #               example="https://stac-api-server.azurewebsites.net"),
             'update':
             fields.Boolean(required=True,
                            description='update the destination catalog'),
@@ -115,18 +115,12 @@ class PublicCatalogsDto:
                         description='ids of the items to be ingested',
                         example=[]),
         })
-    update_stac_collections_via_catalog_id = api.model(
-        'update_stac_collections_via_catalog_id', {
-            'source_catalog_id':
-            fields.Integer(
-                required=True,
-                description='id of the source catalog in the database',
-                example=1,
-                exclusiveMin=1),
+    update_stac_collections_specify_collection_ids = api.model(
+        'update_stac_collections_specify_collection_ids', {
             'collections':
             fields.List(
                 fields.String,
-                required=False,
+                required=True,
                 default=[],
                 example=["landsat-8-l1-c1", "sentinel-2-l1c", "landsat-c2-l2"])
         })
