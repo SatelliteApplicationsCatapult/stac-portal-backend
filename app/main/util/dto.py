@@ -76,7 +76,8 @@ class PublicCatalogsDto:
         })
 
     start_stac_ingestion = api.model(
-        'start_stac_ingestion', {
+        'start_stac_ingestion',
+        {
             # 'source_stac_catalog_url':
             # fields.String(
             #     required=True,

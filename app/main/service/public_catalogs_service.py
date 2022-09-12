@@ -65,20 +65,88 @@ def remove_public_catalog_by_id(public_catalog_id: int) -> Dict[any, any]:
     return a.as_dict()
 
 
-def get_specific_collections_via_catalog_id(catalog_id: int, parameters: Dict[any, any] = None):
-    # get the catalog id from the catalog url
+def get_specific_collections_via_catalog_id(catalog_id: int,
+                                            parameters: Dict[any, any] = None):
+    """Get all collections from a catalog specified by its id.
+
+    The search query will be added to the database so the inserted records
+    can easily be updated later on by forcing update flag to True
+
+    :param catalog_id: Id of the catalog
+    :param parameters: Parameters for the search from stac item-search standard
+
+    :return: Response from the ingestion microservice
+    """
     public_catalogue_entry: PublicCatalog = PublicCatalog.query.filter_by(
         id=catalog_id).first()
     if public_catalogue_entry is None:
-        raise LookupError("No catalogue entry found for id: " + str(catalog_id))
+        raise LookupError("No catalogue entry found for id: " +
+                          str(catalog_id))
     if parameters is None:
         parameters = {}
     parameters['source_stac_catalog_url'] = public_catalogue_entry.url
-    parameters['update'] = False
-    return ingest_stac_data_using_selective_ingester(parameters)
+    return _ingest_stac_data_using_selective_ingester_microservice(parameters)
 
 
-def ingest_stac_data_using_selective_ingester(parameters) -> [str, int]:
+def update_all_stac_records() -> List[Tuple[str, int]]:
+    """Run the search using every stored search parameter.
+
+    :return: List of tuples containing the responses from the selective ingester microservice and the work id
+    """
+    stored_search_parameters: [StoredSearchParameters
+                               ] = StoredSearchParameters.query.all()
+    return _run_ingestion_task_force_update(stored_search_parameters)
+
+
+def update_specific_collections_via_catalog_id(catalog_id: int,
+                                               collections: [str] = None
+                                               ) -> List[Tuple[str, int]]:
+    """Get all stored search parameters for a specific catalogue id. Then
+    combine them all together and pass on for update.
+
+    :param catalog_id: Catalogue id to update it's collections
+    :param collections: Specific collections to update. If None, all collections will be updated
+    :return: List of tuples containing the responses from the selective ingester microservice and the work id
+    """
+    public_catalogue_entry: PublicCatalog = PublicCatalog.query.filter_by(
+        id=catalog_id).first()
+
+    if public_catalogue_entry is None:
+        raise LookupError("No catalogue entry found for id: " +
+                          str(catalog_id))
+
+    stored_search_parameters: [StoredSearchParameters
+                               ] = StoredSearchParameters.query.filter_by(
+                                   associated_catalog_id=catalog_id).all()
+    stored_search_parameters_to_run = []
+    if collections is None or len(collections) == 0:
+        stored_search_parameters_to_run = stored_search_parameters
+        return _run_ingestion_task_force_update(
+            stored_search_parameters_to_run)
+    else:
+        for stored_search_parameter in stored_search_parameters:
+            used_search_parameters = json.loads(
+                stored_search_parameter.used_search_parameters)
+            used_search_parameters_collections = used_search_parameters[
+                'collections']
+            # if any collection in used_search_parameters_collections is in collections, then add to stored_search_parameters_to_run
+            check = any(item in used_search_parameters_collections
+                        for item in collections)
+            if check:
+                stored_search_parameters_to_run.append(stored_search_parameter)
+
+        return _run_ingestion_task_force_update(
+            stored_search_parameters_to_run)
+
+
+def _ingest_stac_data_using_selective_ingester_microservice(
+        parameters) -> [str, int]:
+    """Ingest stac data using the selective ingester microservice. Saves the
+    search parameters to the database so the data can be updated later on.
+
+    :param parameters: Parameters for the search from stac item-search standard
+    :return: Response from the ingestion microservice
+    """
     source_stac_api_url = parameters['source_stac_catalog_url']
     target_stac_api_url = "https://stac-api-server.azurewebsites.net"
     update = parameters['update']
@@ -102,7 +170,7 @@ def ingest_stac_data_using_selective_ingester(parameters) -> [str, int]:
     parameters["target_stac_catalog_url"] = target_stac_api_url
     parameters[
         "callback_endpoint"] = "http://172.17.0.1:5000/status_reporting/loading_public_stac_records/" + str(
-        status_id)  # TODO: make this environment variable
+            status_id)  # TODO: make this environment variable
 
     cidr_range_for_stac_selective_ingester = current_app.config[
         'STAC_SELECTIVE_INGESTER_CIDR_RANGE']
@@ -126,7 +194,15 @@ def ingest_stac_data_using_selective_ingester(parameters) -> [str, int]:
             continue
 
 
-def update_stac_data_using_selective_ingester(parameters) -> [str, int]:
+def _update_stac_data_using_selective_ingester_microservice(
+        parameters) -> [str, int]:
+    """Update stac data using the selective ingester microservice. Does not
+    save the search parameters to the database as it is called from them
+    anyways.
+
+    :param parameters:  Parameters for the search from stac item-search standard
+    :return: Response from the ingestion microservice
+    """
     source_stac_api_url = parameters['source_stac_catalog_url']
     target_stac_api_url = "https://stac-api-server.azurewebsites.net"
     update = True
@@ -136,7 +212,7 @@ def update_stac_data_using_selective_ingester(parameters) -> [str, int]:
     parameters["target_stac_catalog_url"] = target_stac_api_url
     parameters[
         "callback_endpoint"] = "http://172.17.0.1:5000/status_reporting/loading_public_stac_records/" + str(
-        status_id)  # TODO: make this environment variable
+            status_id)  # TODO: make this environment variable
 
     cidr_range_for_stac_selective_ingester = current_app.config[
         'STAC_SELECTIVE_INGESTER_CIDR_RANGE']
@@ -160,67 +236,21 @@ def update_stac_data_using_selective_ingester(parameters) -> [str, int]:
             continue
 
 
-def update_all_collections() -> List[Tuple[str, int]]:
-    stored_search_parameters: [StoredSearchParameters
-                               ] = StoredSearchParameters.query.all()
-    return _run_ingestion_task_force_update(stored_search_parameters)
-
-
-def update_specific_collections_via_catalog_id(catalog_id: int,
-                                               collections: [str] = None
-                                               ) -> List[Tuple[str, int]]:
-    # get the catalog id from the catalog id
-    public_catalogue_entry: PublicCatalog = PublicCatalog.query.filter_by(
-        id=catalog_id).first()
-
-    if public_catalogue_entry is None:
-        raise LookupError("No catalogue entry found for id: " + str(catalog_id))
-
-    stored_search_parameters: [StoredSearchParameters
-                               ] = StoredSearchParameters.query.filter_by(
-        associated_catalog_id=catalog_id).all()
-    stored_search_parameters_to_run = []
-    if collections is None or len(collections) == 0:
-        stored_search_parameters_to_run = stored_search_parameters
-        return _run_ingestion_task_force_update(
-            stored_search_parameters_to_run)
-    else:
-        for stored_search_parameter in stored_search_parameters:
-            used_search_parameters = json.loads(
-                stored_search_parameter.used_search_parameters)
-            used_search_parameters_collections = used_search_parameters[
-                'collections']
-            # if any collection in used_search_parameters_collections is in collections, then add to stored_search_parameters_to_run
-            check = any(item in used_search_parameters_collections
-                        for item in collections)
-            if check:
-                stored_search_parameters_to_run.append(stored_search_parameter)
-
-        return _run_ingestion_task_force_update(stored_search_parameters_to_run, manual_update=True)
-
-
-def update_specific_collections_via_catalog_url(catalog_url: str,
-                                                collections: [str] = None
-                                                ) -> List[Tuple[str, int]]:
-    # get the catalog id from the catalog url
-    public_catalogue_entry: PublicCatalog = PublicCatalog.query.filter_by(
-        url=catalog_url).first()
-    if public_catalogue_entry is None:
-        raise LookupError("No catalogue entry found for url: " + catalog_url)
-    return update_specific_collections_via_catalog_id(
-        public_catalogue_entry.id, collections)
-    pass
-
-
 def _run_ingestion_task_force_update(
-        stored_search_parameters: [StoredSearchParameters
-                                   ], manual_update=False) -> List[Tuple[str, int]]:
+    stored_search_parameters: [StoredSearchParameters
+                               ]) -> List[Tuple[str, int]]:
+    """Calls the _update_stac_data_using_selective_ingester_microservice on
+    each set of StoredSearchParameters setting the update flag to true.
+
+    :param stored_search_parameters: List of StoredSearchParameters to use for update operations
+    :return: List of tuples containing the responses from the selective ingester microservice and the work id
+    """
     responses_from_ingestion_microservice = []
     for i in stored_search_parameters:
         try:
             used_search_parameters = json.loads(i.used_search_parameters)
             used_search_parameters["update"] = True
-            microservice_response, work_id = update_stac_data_using_selective_ingester(
+            microservice_response, work_id = _update_stac_data_using_selective_ingester_microservice(
                 used_search_parameters)
             responses_from_ingestion_microservice.append(
                 (microservice_response, work_id))
