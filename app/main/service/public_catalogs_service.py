@@ -133,6 +133,8 @@ def update_specific_collections_via_catalog_id(catalog_id: int,
             check = any(item in used_search_parameters_collections
                         for item in collections)
             if check:
+                # TODO: This updates all collections from the stored search parameter, not just the ones specified
+                # TODO: Either store each collection in each search param separately or update the search param to only contain the collections specified
                 stored_search_parameters_to_run.append(stored_search_parameter)
 
         return _run_ingestion_task_force_update(
@@ -168,9 +170,8 @@ def _ingest_stac_data_using_selective_ingester_microservice(
         db.session.rollback()
 
     parameters["target_stac_catalog_url"] = target_stac_api_url
-    parameters[
-        "callback_endpoint"] = "http://172.17.0.1:5000/status_reporting/loading_public_stac_records/" + str(
-            status_id)  # TODO: make this environment variable
+    parameters["callback_endpoint"] = current_app.config[
+        "STAC_SELECTIVE_INGESTER_CALLBACK_ENDPOINT"] + "/" + str(status_id)
 
     cidr_range_for_stac_selective_ingester = current_app.config[
         'STAC_SELECTIVE_INGESTER_CIDR_RANGE']
@@ -204,15 +205,14 @@ def _update_stac_data_using_selective_ingester_microservice(
     :return: Response from the ingestion microservice
     """
     source_stac_api_url = parameters['source_stac_catalog_url']
-    target_stac_api_url = "https://stac-api-server.azurewebsites.net"
+    target_stac_api_url = current_app.config["TARGET_STAC_API_SERVER"]
     update = True
     status_id, associated_catalogue_id = _make_stac_ingestion_status_entry(
         source_stac_api_url, target_stac_api_url, update)
 
     parameters["target_stac_catalog_url"] = target_stac_api_url
-    parameters[
-        "callback_endpoint"] = "http://172.17.0.1:5000/status_reporting/loading_public_stac_records/" + str(
-            status_id)  # TODO: make this environment variable
+    parameters["callback_endpoint"] = current_app.config[
+        "STAC_SELECTIVE_INGESTER_CALLBACK_ENDPOINT"] + "/" + str(status_id)
 
     cidr_range_for_stac_selective_ingester = current_app.config[
         'STAC_SELECTIVE_INGESTER_CIDR_RANGE']
