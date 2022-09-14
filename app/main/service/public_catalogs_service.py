@@ -155,19 +155,20 @@ def _ingest_stac_data_using_selective_ingester_microservice(
     status_id, associated_catalogue_id = _make_stac_ingestion_status_entry(
         source_stac_api_url, target_stac_api_url, update)
 
-    try:
-        stored_search_parameters = StoredSearchParameters()
-        stored_search_parameters.associated_catalog_id = associated_catalogue_id
-        stored_search_parameters.used_search_parameters = json.dumps(
-            parameters)
-        db.session.add(stored_search_parameters)
-        db.session.commit()
-    except sqlalchemy.exc.IntegrityError:
-        # exact same search parameters already exist, no need to store them again
-        pass
-    finally:
-        # roolback if there is an error
-        db.session.rollback()
+    # try:
+    #     stored_search_parameters = StoredSearchParameters()
+    #     stored_search_parameters.associated_catalog_id = associated_catalogue_id
+    #     stored_search_parameters.used_search_parameters = json.dumps(
+    #         parameters)
+    #     db.session.add(stored_search_parameters)
+    #     db.session.commit()
+    # except sqlalchemy.exc.IntegrityError:
+    #     # exact same search parameters already exist, no need to store them again
+    #     pass
+    # finally:
+    #     # roolback if there is an error
+    #     db.session.rollback()
+    _store_search_parameters(associated_catalogue_id, parameters)
 
     parameters["target_stac_catalog_url"] = target_stac_api_url
     parameters["callback_endpoint"] = current_app.config[
@@ -182,7 +183,6 @@ def _ingest_stac_data_using_selective_ingester_microservice(
 
     potential_ips = get_ip_from_cird_range(
         cidr_range_for_stac_selective_ingester, remove_unusable=True)
-
     for ip in potential_ips:
         print("Trying to connect to: ", ip)
         try:
@@ -193,6 +193,39 @@ def _ingest_stac_data_using_selective_ingester_microservice(
             return response.text, status_id
         except requests.exceptions.ConnectionError:
             continue
+
+    raise ConnectionError("Could not connect to any of the following ips: " +
+                          str(potential_ips))
+
+
+def _store_search_parameters(associated_catalogue_id,
+                             parameters: dict) -> None:
+    """Store the search parameters in the database so they can be used to
+    update the data later on.
+
+    Separate each collection into it's own search parameter so they can be updated individually with ease.
+
+    :param associated_catalogue_id:
+    :param parameters:
+    :return:
+    """
+    for collection in parameters['collections']:
+        filtered_parameters = parameters.copy()
+        filtered_parameters['collections'] = [collection]
+
+        try:
+            stored_search_parameters = StoredSearchParameters()
+            stored_search_parameters.associated_catalog_id = associated_catalogue_id
+            stored_search_parameters.used_search_parameters = json.dumps(
+                filtered_parameters)
+            db.session.add(stored_search_parameters)
+            db.session.commit()
+        except sqlalchemy.exc.IntegrityError:
+            # exact same search parameters already exist, no need to store them again
+            pass
+        finally:
+            # roolback if there is an error
+            db.session.rollback()
 
 
 def _update_stac_data_using_selective_ingester_microservice(

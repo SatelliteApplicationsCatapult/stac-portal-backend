@@ -7,6 +7,7 @@ from typing import Callable
 
 
 def token_required(f) -> Callable:
+
     @wraps(f)
     def decorated(*args, **kwargs):
 
@@ -22,6 +23,7 @@ def token_required(f) -> Callable:
 
 
 def admin_token_required(f: Callable) -> Callable:
+
     @wraps(f)
     def decorated(*args, **kwargs):
 

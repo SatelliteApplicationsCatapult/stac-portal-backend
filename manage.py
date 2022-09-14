@@ -7,7 +7,7 @@ from flask_migrate import Migrate
 from app import blueprint
 from app.main import create_app, db
 
-app = create_app(os.getenv('PORTAL_ENV') or 'dev')
+app = create_app(os.getenv('ENV') or 'dev')
 app.register_blueprint(blueprint)
 app.app_context().push()
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -24,6 +24,7 @@ FLASK_APP = "manage.py"
 
 def run():
     # app.run on 0.0.0.0:5000
+    # print current app config mode
     app.run(host='0.0.0.0', port=5000)
     db.create_all()
 
@@ -35,6 +36,7 @@ def run():
 #     if result.wasSuccessful():
 #         return 0
 #     return 1
+print("Running in mode: {}".format(app.config["ENV"]))
 
 if __name__ == '__main__':
     cli()

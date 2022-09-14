@@ -65,8 +65,28 @@ class PublicCatalogsViaId(Resource):
             return {'message': 'No result found'}, 404
 
 
+@api.route('/<int:public_catalog_id>/records/get')
+class GetStacRecordsSpecifyingPublicCatalogId(Resource):
+
+    @api.doc(description="""Get specific collections from catalog.""")
+    @api.expect(PublicCatalogsDto.start_stac_ingestion, validate=True)
+    @api.response(200, 'Success')
+    def post(self, public_catalog_id):
+        data = request.json
+        try:
+            return public_catalogs_service.get_specific_collections_via_catalog_id(
+                public_catalog_id, data), 200
+        except LookupError as e:
+            return {'message': 'Public catalog not found'}, 404
+        except ConnectionError as e:
+            return {
+                'message':
+                'Connection Error, ingestion microservice is probably down'
+            }, 500
+
+
 @api.route('/records/update')
-class StacIngestion(Resource):
+class UpdateAllStacRecords(Resource):
 
     @api.doc(
         description='Update all stored stac records from all public catalogs')
@@ -93,6 +113,11 @@ class UpdateStacRecordsSpecifyingPublicCatalogId(Resource):
                 public_catalog_id)
         except AttributeError:
             return {'message': 'Public catalog not found'}, 404
+        except ConnectionError as e:
+            return {
+                'message':
+                'Connection Error, ingestion microservice is probably down'
+            }, 500
 
     @api.doc(description="""Update specific collections from catalog.""")
     @api.expect(
@@ -115,75 +140,8 @@ class UpdateStacRecordsSpecifyingPublicCatalogId(Resource):
             return {
                 'message': 'Public catalog with specified id not found'
             }, 404
-
-
-# @api.route("/records/update/by_catalog_url")
-# class StacIngestionViaUrl(Resource):
-#
-#     @api.doc(
-#         description=
-#         'Update all stored stac records from the public catalog specified by its catalog url'
-#     )
-#     @api.expect(PublicCatalogsDto.update_stac_collections_via_catalog_url,
-#                 validate=True)
-#     def post(self):
-#         data = request.json
-#         source_catalog_url = data['source_catalog_url']
-#         collections_to_update = []
-#         try:
-#             collections_to_update = data['collections']  # optional parameter
-#         except KeyError:
-#             pass
-#         try:
-#             result = public_catalogs_service.update_specific_collections_via_catalog_url(
-#                 source_catalog_url, collections_to_update)
-#             response = []
-#             for i in result:
-#                 response.append({
-#                     "message": i[0],
-#                     "callback_id": i[1],
-#                 })
-#             return response, 200
-#         except LookupError as e:
-#             return {'message': "Catalog with specified url not found"}, 404
-
-# @api.route('/records/get')
-# class StacIngestionStatusStart(Resource):
-#
-#     @api.doc(description='Get the stac records from public catalog')
-#     @api.expect(PublicCatalogsDto.start_stac_ingestion, validate=True)
-#     @api.response(200, "Okay")
-#     @api.response(
-#         400,
-#         "Bad Request - Source stac api url specified is not present in the public_catalogs"
-#     )
-#     @api.response(412, "Target STAC API URL not found in public catalogs")
-#     def post(self):
-#         try:
-#             ingestion_parameters = request.json
-#             response_message, status_id = public_catalogs_service._ingest_stac_data_using_selective_ingester_microservice(
-#                 ingestion_parameters)
-#             return {"message": response_message, "callback_id": status_id}, 200
-#         except ValueError as e:
-#             return {
-#                        'message': str(e),
-#                    }, 412
-#         except IndexError as e:
-#             return {
-#                        'message': 'Some elements in json body are not present',
-#                    }, 400
-
-
-@api.route('/<int:public_catalog_id>/records/get')
-class GetStacRecordsSpecifyingPublicCatalogId(Resource):
-
-    @api.doc(description="""Get specific collections from catalog.""")
-    @api.expect(PublicCatalogsDto.start_stac_ingestion, validate=True)
-    @api.response(200, 'Success')
-    def post(self, public_catalog_id):
-        data = request.json
-        try:
-            return public_catalogs_service.get_specific_collections_via_catalog_id(
-                public_catalog_id, data), 200
-        except LookupError as e:
-            return {'message': 'Public catalog not found'}, 404
+        except ConnectionError as e:
+            return {
+                'message':
+                'Connection Error, ingestion microservice is probably down'
+            }, 500
