@@ -1,9 +1,9 @@
-from flask import request
+from typing import Dict, Tuple
+
 from flask_restx import Resource
 
-from ..service.collection_service import get_all_collections, get_collection_by_id, get_items_by_collection_id, get_item_from_collection
+from ..service.collection_service import *
 from ..util.dto import CollectionsDto
-from typing import Dict, Tuple
 
 api = CollectionsDto.api
 collections = CollectionsDto.collection
@@ -24,9 +24,18 @@ class Collection(Resource):
     """Collection Resource."""
 
     @api.doc("get_collection")
+    @api.response(200, "Success")
+    @api.response(403, "Unauthorized")
+    @api.response("4xx", "Stac API reported error")
     def get(self, collection_id: str) -> Tuple[Dict[str, str], int]:
-        """Get a collection by status_id."""
         return get_collection_by_id(collection_id)
+
+    @api.doc("Remove collection by id")
+    @api.response(200, "Collection removed successfully.")
+    @api.response(403, "Unauthorized.")
+    @api.response("4xx", "Stac API reported error")
+    def delete(self, collection_id: str) -> Tuple[Dict[str, str], int]:
+        return remove_collection_by_id(collection_id)
 
 
 @api.route("/<collection_id>/items")
