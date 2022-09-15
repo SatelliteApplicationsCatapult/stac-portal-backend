@@ -239,7 +239,8 @@ def add_item_to_collection(
                         response.headers.items())
 
 
-def update_item_in_collection(collection_id: str, item_id: str, item_data: Dict[str, any]) -> Tuple[Dict[str, any], int] or Response:
+def update_item_in_collection(collection_id: str, item_id: str, item_data: Dict[str, any]) -> Tuple[Dict[
+                                                                                                        str, any], int] or Response:
     """Update an item in a collection on the STAC API server.
 
     Returns updated item if STAC API server returns 200.
@@ -274,8 +275,53 @@ def update_item_in_collection(collection_id: str, item_id: str, item_data: Dict[
                         response.headers.items())
 
 
+def remove_item_from_collection(collection_id: str, item_id: str) -> Tuple[Dict[str, any], int] or Response:
+    """Remove an item from a collection on the STAC API server.
+
+    Returns removed item if STAC API server returns 200.
+    Returns error message if STAC API server returns 4xx (but not 403).
+
+    If any other status code is returned, the response is proxied to the client for easier debugging.
+    (That probably means Azure configuration is bad, VPN is not used, etc.)
+
+    :param collection_id: Collection data to create.
+    :param item_id: Id of the item to remove
+    :return: Either a tuple containing stac server response and status code, or a Response object.
+    """
+    response = requests.delete(route("COLLECTIONS") + collection_id + "/items/" + item_id)
+
+    if response.status_code == 200:
+        collection_json = response.json()
+        return {
+                   "parameters": collection_json,
+                   "status": "success",
+               }, response.status_code
+
+    if 404 <= response.status_code <= 499 or 400 <= response.status_code <= 402:
+        return {
+                   "stac_api_server_response": response.json(),
+                   "stac_api_server_response_code": response.status_code,
+                   "status": "failed"
+               }, response.status_code
+    else:
+        return Response(response.text, response.status_code,
+                        response.headers.items())
+
+
 def get_items_by_collection_id(
         collection_id: str) -> Tuple[Dict[str, any], int] or Response:
+    """
+    Get all items from a collection on the STAC API server.
+
+    Returns items if STAC API server returns 200.
+    Returns error message if STAC API server returns 4xx (but not 403).
+
+    If any other status code is returned, the response is proxied to the client for easier debugging.
+    (That probably means Azure configuration is bad, VPN is not used, etc.)
+
+    :param collection_id: Collection id to get items from.
+    :return: Either a tuple containing stac server response and status code, or a Response object.
+    """
     response = requests.get(route("COLLECTIONS") + collection_id + "/items")
 
     if response.status_code == 200:

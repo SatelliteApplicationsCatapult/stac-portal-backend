@@ -92,4 +92,4 @@ class CollectionItem(Resource):
     @api.response(403, "Unauthorized.")
     @api.response("4xx", "Stac API reported error")
     def delete(self, collection_id: str, item_id: str):
-        raise NotImplemented
+        return remove_item_from_collection(collection_id, item_id)
