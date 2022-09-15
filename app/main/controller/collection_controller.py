@@ -25,16 +25,15 @@ class CollectionsList(Resource):
     @api.response(403, "Unauthorized")
     @api.response("4xx", "Stac API reported error")
     def post(self):
-        collection_json = request.json
-        return create_new_collection(collection_json)
+        return create_new_collection(request.json)
 
     @api.doc("Update a collection on the stac-api server")
+    @api.expect(CollectionsDto.store_collection, validate=True)
     @api.response(200, "Success")
     @api.response(403, "Unauthorized")
     @api.response("4xx", "Stac API reported error")
     def put(self) -> Tuple[Dict[str, str], int]:
-        # return update_collection()
-        pass
+        return update_existing_collection(request.json)
 
 
 @api.route("/<collection_id>")

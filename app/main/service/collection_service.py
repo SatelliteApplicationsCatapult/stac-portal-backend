@@ -74,6 +74,40 @@ def create_new_collection(
                         response.headers.items())
 
 
+def update_existing_collection(
+        collection_data: Dict[str,
+                              str]) -> Tuple[Dict[str, str], int] or Response:
+    """Update an existing collection on the STAC API server.
+
+    Returns updated collection if STAC API server returns 200.
+    Returns error message if STAC API server returns 4xx (but not 403).
+
+    If any other status code is returned, the response is proxied to the client for easier debugging.
+    (That probably means Azure configuration is bad, VPN is not used, etc.)
+
+    :param collection_data: Collection data to create.
+    :return: Either a tuple containing stac server response and status code, or a Response object.
+    """
+    response = requests.put(route("COLLECTIONS"), json=collection_data)
+
+    if response.status_code == 200:
+        collection_json = response.json()
+        return {
+            "parameters": collection_json,
+            "status": "success",
+        }, response.status_code
+
+    if 404 <= response.status_code <= 499 or 400 <= response.status_code <= 402:
+        return {
+            "stac_api_server_response": response.json(),
+            "stac_api_server_response_code": response.status_code,
+            "status": "failed"
+        }, response.status_code
+    else:
+        return Response(response.text, response.status_code,
+                        response.headers.items())
+
+
 def get_collection_by_id(
         collection_id: str) -> Tuple[Dict[str, str], int] or Response:
     """Get a collection by ID from the STAC API server.
