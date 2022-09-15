@@ -42,7 +42,7 @@ def get_all_collections() -> Tuple[Dict[str, str], int] or Response:
 
 def create_new_collection(
         collection_data: Dict[str,
-                              str]) -> Tuple[Dict[str, str], int] or Response:
+                              any]) -> Tuple[Dict[str, str], int] or Response:
     """Create a new collection on the STAC API server.
 
     Returns created collection if STAC API server returns 200.
@@ -76,7 +76,7 @@ def create_new_collection(
 
 def update_existing_collection(
         collection_data: Dict[str,
-                              str]) -> Tuple[Dict[str, str], int] or Response:
+                              any]) -> Tuple[Dict[str, str], int] or Response:
     """Update an existing collection on the STAC API server.
 
     Returns updated collection if STAC API server returns 200.
@@ -179,9 +179,11 @@ def remove_collection_by_id(
                         response.headers.items())
 
 
-def get_items_by_collection_id(
-        collection_id: str) -> Tuple[Dict[str, str], int] or Response:
-    response = requests.get(route("COLLECTIONS") + collection_id + "/items")
+def get_item_from_collection(
+        collection_id: str,
+        item_id: str) -> Tuple[Dict[str, str], int] or Response:
+    response = requests.get(
+        route("COLLECTIONS") + collection_id + "/items/" + item_id)
 
     if response.status_code == 200:
         collection_json = response.json()
@@ -201,11 +203,45 @@ def get_items_by_collection_id(
                         response.headers.items())
 
 
-def get_item_from_collection(
+def add_item_to_collection(
         collection_id: str,
-        item_id: str) -> Tuple[Dict[str, str], int] or Response:
-    response = requests.get(
-        route("COLLECTIONS") + collection_id + "/items/" + item_id)
+        item_data: Dict[str, any]) -> Tuple[Dict[str, str], int] or Response:
+    """Add an item to a collection on the STAC API server.
+
+    Returns created item if STAC API server returns 200.
+    Returns error message if STAC API server returns 4xx (but not 403).
+
+    If any other status code is returned, the response is proxied to the client for easier debugging.
+    (That probably means Azure configuration is bad, VPN is not used, etc.)
+
+    :param collection_id: Collection data to create.
+    :param item_data: Item data to store
+    :return: Either a tuple containing stac server response and status code, or a Response object.
+    """
+    response = requests.post(route("COLLECTIONS") + collection_id + "/items",
+                             json=item_data)
+
+    if response.status_code == 200:
+        collection_json = response.json()
+        return {
+            "parameters": collection_json,
+            "status": "success",
+        }, response.status_code
+
+    if 404 <= response.status_code <= 499 or 400 <= response.status_code <= 402:
+        return {
+            "stac_api_server_response": response.json(),
+            "stac_api_server_response_code": response.status_code,
+            "status": "failed"
+        }, response.status_code
+    else:
+        return Response(response.text, response.status_code,
+                        response.headers.items())
+
+
+def get_items_by_collection_id(
+        collection_id: str) -> Tuple[Dict[str, str], int] or Response:
+    response = requests.get(route("COLLECTIONS") + collection_id + "/items")
 
     if response.status_code == 200:
         collection_json = response.json()
