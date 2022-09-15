@@ -1,5 +1,4 @@
-from typing import Dict, Tuple
-
+from flask import request
 from flask_restx import Resource
 
 from ..service.collection_service import *
@@ -13,10 +12,29 @@ collections = CollectionsDto.collection
 class CollectionsList(Resource):
     """Collections Resource."""
 
-    @api.doc("list_of_collections")
+    @api.doc("List all collections on the stac-api server")
+    @api.response(200, "Success")
+    @api.response(403, "Unauthorized")
+    @api.response("4xx", "Stac API reported error")
     def get(self) -> Tuple[Dict[str, str], int]:
-        """List all collections."""
         return get_all_collections()
+
+    @api.doc("Create a new collection on the stac-api server")
+    @api.expect(CollectionsDto.store_collection, validate=True)
+    @api.response(200, "Success")
+    @api.response(403, "Unauthorized")
+    @api.response("4xx", "Stac API reported error")
+    def post(self):
+        collection_json = request.json
+        return create_new_collection(collection_json)
+
+    @api.doc("Update a collection on the stac-api server")
+    @api.response(200, "Success")
+    @api.response(403, "Unauthorized")
+    @api.response("4xx", "Stac API reported error")
+    def put(self) -> Tuple[Dict[str, str], int]:
+        # return update_collection()
+        pass
 
 
 @api.route("/<collection_id>")
