@@ -37,7 +37,7 @@ class CollectionsDto:
                            description='collection status_id'),
                            'item_id': fields.String(required=True,
                            description='item status_id')})
-    collection_dto = api.model('collection_dto', {  # TODO: Check: Follow collection spec fully
+    collection_dto = api.model('collection_dto', {  # TODO: Check: Follow collection spec fully, recurse it all the way down
                                                     # Must follow https://github.com/radiantearth/stac-spec/blob/master/collection-spec/collection-spec.md
         'type': fields.String(required=True,
                               description='Collection type',
@@ -65,7 +65,7 @@ class CollectionsDto:
                                 description='spatial and temporal extent'
                                 ),
         })
-    item_dto = api.model('item_dto', {  # TODO: Check: Follow collection spec fully
+    item_dto = api.model('item_dto', {  # TODO: Check: Follow collection spec fully, recurse it all the way down
                                         # Must follow https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md
         'type': fields.String(required=True, description='Item type',
                               example='Feature'),
