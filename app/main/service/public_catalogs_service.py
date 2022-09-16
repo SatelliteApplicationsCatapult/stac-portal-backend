@@ -133,8 +133,6 @@ def update_specific_collections_via_catalog_id(catalog_id: int,
             check = any(item in used_search_parameters_collections
                         for item in collections)
             if check:
-                # TODO: This updates all collections from the stored search parameter, not just the ones specified
-                # TODO: Either store each collection in each search param separately or update the search param to only contain the collections specified
                 stored_search_parameters_to_run.append(stored_search_parameter)
 
         return _run_ingestion_task_force_update(
@@ -218,14 +216,41 @@ def _store_search_parameters(associated_catalogue_id,
             stored_search_parameters.associated_catalog_id = associated_catalogue_id
             stored_search_parameters.used_search_parameters = json.dumps(
                 filtered_parameters)
+            stored_search_parameters.collection = collection
+            try:
+                stored_search_parameters.bbox = json.dumps(
+                    filtered_parameters['bbox'])
+            except KeyError:
+                pass
+            try:
+                stored_search_parameters.datetime = json.dumps(
+                    filtered_parameters['datetime'])
+            except KeyError:
+                pass
+
             db.session.add(stored_search_parameters)
             db.session.commit()
         except sqlalchemy.exc.IntegrityError:
             # exact same search parameters already exist, no need to store them again
             pass
         finally:
-            # roolback if there is an error
             db.session.rollback()
+
+
+def remove_search_params_for_collection_id(collection_id: str) -> int:
+    """Remove all stored search parameters for a given collection id.
+
+    :param collection_id: The collection id to remove
+    :return: The number of search parameters removed
+    """
+    num_deleted = 0
+    stored_search_parameters = StoredSearchParameters.query.filter_by(
+        collection=collection_id).all()
+    for stored_search_parameter in stored_search_parameters:
+        db.session.delete(stored_search_parameter)
+        num_deleted += 1
+    db.session.commit()
+    return num_deleted
 
 
 def _update_stac_data_using_selective_ingester_microservice(
