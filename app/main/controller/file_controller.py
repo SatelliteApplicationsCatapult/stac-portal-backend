@@ -1,8 +1,5 @@
-import os
-
 from flask import request
 from flask_restx import Resource
-from werkzeug.utils import secure_filename
 
 from ..service.file_service import *
 from ..util.dto import FileDto
@@ -19,16 +16,36 @@ class CheckBlobStatus(Resource):
         return {"available": available, "message": message}, 200
 
 
-@api.route("/stac_assets/upload")
+@api.route("/stac_assets/<item_id>/stage")
 class UploadStacAssets(Resource):
-    @api.doc(description="Upload stac assets to blob storage")
+    @api.doc(description="Stage stac assets to the backend")
     # @api.expect(FileDto.file_upload, validate=True)
     @api.response(200, "Success")
-    def post(self):
-        file = request.files['file']
-        filename = secure_filename(file.filename)
-        file.save(filename)
-        status, message = upload_file_to_blob(file)
-        os.remove(filename)
-        blob_path = "blob_path"
-        return {"message": message, "filename": filename, "blob_path": blob_path}, 200
+    def post(self, item_id):
+        try:
+            response = stage_file(item_id, request.files["filename"])
+            return {"message": response}, 200
+        except FileExistsError:
+            return {"message": "File already exists"}, 409
+
+
+@api.route("/stac_assets/<item_id>/upload")
+class CommitStacAssets(Resource):
+    @api.doc(description="Check list of staged files")
+    @api.response(200, "Success")
+    def get(self, item_id):
+        return list_staged_files(item_id)
+
+    @api.doc(description="Commit staged files")
+    @api.response(200, "Success")
+    def put(self, item_id):
+        return upload_staged_files_to_blob(item_id)
+
+
+
+# @api.route("/stac_assets/<item_id>/delete")
+# class DeleteStacAssets(Resource):
+#     @api.doc(description="Delete stac assets to the backend")
+#     @api.response(200, "Success")
+#     def delete(self):
+#         pass
