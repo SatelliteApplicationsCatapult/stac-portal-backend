@@ -6,37 +6,40 @@ from flask_restx import Namespace, fields
 class UserDto:
 
     api = Namespace('user', description='user related operations')
-    user = api.model('user', {
-        'email': fields.String(required=True,
-                               description='user email address'),
-        'username': fields.String(required=True,
-                                  description='user username'),
-        'password': fields.String(required=True,
-                                  description='user password'),
-        'public_id': fields.String(description='user Identifier'),
+    user = api.model(
+        'user', {
+            'email': fields.String(required=True,
+                                   description='user email address'),
+            'username': fields.String(required=True,
+                                      description='user username'),
+            'password': fields.String(required=True,
+                                      description='user password'),
+            'public_id': fields.String(description='user Identifier'),
         })
 
 
 class AuthDto:
 
-    api = Namespace('auth',
-                    description='authentication related operations')
-    user_auth = api.model('auth_details',
-                          {'email': fields.String(required=True,
-                          description='The email address'),
-                          'password': fields.String(required=True,
-                          description='The user password ')})
+    api = Namespace('auth', description='authentication related operations')
+    user_auth = api.model(
+        'auth_details', {
+            'email':
+            fields.String(required=True, description='The email address'),
+            'password':
+            fields.String(required=True, description='The user password ')
+        })
 
 
 class CollectionsDto:
 
-    api = Namespace('collections',
-                    description='collection related operations')
-    collection = api.model('collections',
-                           {'collection_id': fields.String(required=True,
-                           description='collection status_id'),
-                           'item_id': fields.String(required=True,
-                           description='item status_id')})
+    api = Namespace('collections', description='collection related operations')
+    collection = api.model(
+        'collections', {
+            'collection_id':
+            fields.String(required=True, description='collection status_id'),
+            'item_id':
+            fields.String(required=True, description='item status_id')
+        })
     collection_dto = api.model('collection_dto', {  # TODO: Check: Follow collection spec fully, recurse it all the way down
                                                     # Must follow https://github.com/radiantearth/stac-spec/blob/master/collection-spec/collection-spec.md
         'type': fields.String(required=True,
@@ -98,31 +101,39 @@ class CollectionsDto:
 
 class ValidateDto:
 
-    api = Namespace('validate',
-                    description='validate related operations')
-    validate = api.model('validate', {'json': fields.Raw(required=True,
-                         description='JSON object to validate')})  # takes a JSON object
+    api = Namespace('validate', description='validate related operations')
+    validate = api.model('validate', {
+        'json':
+        fields.Raw(required=True, description='JSON object to validate')
+    })  # takes a JSON object
 
 
 class PublicCatalogsDto:
 
     api = Namespace('public_catalogs',
                     description='public catalogs related operations')
-    add_public_catalog = api.model('add_public_catalog', {
-        'name': fields.String(required=True,
-                              description='name of the public catalog',
-                              example='Microsoft Planetary Computer'),
-        'url': fields.String(required=True,
-                             description='url of the public catalog',
-                             example='https://planetarycomputer.microsoft.com/api/stac/v1'
-                             ),
-        'description': fields.String(required=True,
+    add_public_catalog = api.model(
+        'add_public_catalog', {
+            'name':
+            fields.String(required=True,
+                          description='name of the public catalog',
+                          example='Microsoft Planetary Computer'),
+            'url':
+            fields.String(
+                required=True,
+                description='url of the public catalog',
+                example='https://planetarycomputer.microsoft.com/api/stac/v1'),
+            'description':
+            fields.String(
+                required=True,
                 description='description of the public catalog',
-                example='The Planetary Computer is a cloud-based platform for planetary-scale geospatial data processing and analysis.'
-                ),
-        'stac_version': fields.String(required=True,
-                description='STAC version of the public catalog',
-                example='1.0.0'),
+                example=
+                'The Planetary Computer is a cloud-based platform for planetary-scale geospatial data processing and analysis.'
+            ),
+            'stac_version':
+            fields.String(required=True,
+                          description='STAC version of the public catalog',
+                          example='1.0.0'),
         })
 
     start_stac_ingestion = api.model('start_stac_ingestion', {  # 'source_stac_catalog_url':
@@ -176,20 +187,28 @@ class StatusReportingDto:
 
     api = Namespace('status_reporting',
                     description='Status reporting related operations')
-    stac_ingestion_status_post = api.model('stac_ingestion_status_post'
-            , {
-        'newly_stored_collections_count': fields.Integer(required=True,
-                description='number of newly stored collections'),
-        'newly_stored_collections': fields.List(fields.String,
-                required=True, description='newly stored collections'),
-        'updated_collections_count': fields.Integer(required=True,
-                description='updated collections count'),
-        'updated_collections': fields.List(fields.String,
-                required=True, description='updated collections'),
-        'newly_stored_items_count': fields.Integer(required=True,
-                description='newly stored items count'),
-        'updated_items_count': fields.Integer(required=True,
-                description='updated items count'),
-        'already_stored_items_count': fields.Integer(required=True,
-                description='already stored items count'),
+    stac_ingestion_status_post = api.model(
+        'stac_ingestion_status_post', {
+            'newly_stored_collections_count':
+            fields.Integer(required=True,
+                           description='number of newly stored collections'),
+            'newly_stored_collections':
+            fields.List(fields.String,
+                        required=True,
+                        description='newly stored collections'),
+            'updated_collections_count':
+            fields.Integer(required=True,
+                           description='updated collections count'),
+            'updated_collections':
+            fields.List(fields.String,
+                        required=True,
+                        description='updated collections'),
+            'newly_stored_items_count':
+            fields.Integer(required=True,
+                           description='newly stored items count'),
+            'updated_items_count':
+            fields.Integer(required=True, description='updated items count'),
+            'already_stored_items_count':
+            fields.Integer(required=True,
+                           description='already stored items count'),
         })

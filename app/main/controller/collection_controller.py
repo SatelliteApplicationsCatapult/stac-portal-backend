@@ -10,6 +10,7 @@ collections = CollectionsDto.collection
 
 @api.route("/")
 class CollectionsList(Resource):
+
     @api.doc(description="List all collections on the stac-api server")
     @api.response(200, "Success")
     @api.response(403, "Unauthorized")
@@ -36,6 +37,7 @@ class CollectionsList(Resource):
 
 @api.route("/<collection_id>")
 class Collection(Resource):
+
     @api.doc(description="get_collection")
     @api.response(200, "Success")
     @api.response(403, "Unauthorized")
@@ -53,6 +55,7 @@ class Collection(Resource):
 
 @api.route("/<collection_id>/items")
 class CollectionItems(Resource):
+
     @api.doc(description="get_collection_items")
     @api.response(200, "Success")
     @api.response(403, "Unauthorized.")
@@ -71,6 +74,7 @@ class CollectionItems(Resource):
 
 @api.route("/<collection_id>/items/<item_id>")
 class CollectionItem(Resource):
+
     @api.doc(description="get_collection_item")
     @api.response(200, "Success")
     @api.response(403, "Unauthorized.")
