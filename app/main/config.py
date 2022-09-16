@@ -37,6 +37,7 @@ class DevelopmentConfig(Config):
     STAC_SELECTIVE_INGESTER_CALLBACK_ENDPOINT = os.getenv(
         "STAC_SELECTIVE_INGESTER_CALLBACK_ENDPOINT",
         "http://172.17.0.1:5000/status_reporting/loading_public_stac_records")
+    AZURE_STORAGE_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING', "")
 
 
 # class TestingConfig(Config):
