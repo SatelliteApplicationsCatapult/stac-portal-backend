@@ -1,5 +1,6 @@
 from flask import request
 from flask_restx import Resource
+from werkzeug.utils import secure_filename
 
 from ..service.file_service import *
 from ..util.dto import FileDto
@@ -41,7 +42,7 @@ class CommitStacAssets(Resource):
             filename = f"{item_id}_{filename}"
 
         try:
-            status, message = upload_filestream_to_blob(filename, file)
+            message = upload_filestream_to_blob(filename, file)
             return {"message": message}, 200
         except FileExistsError:
             return {"message": "File already exists"}, 409
