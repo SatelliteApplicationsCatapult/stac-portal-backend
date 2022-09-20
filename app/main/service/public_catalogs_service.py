@@ -139,9 +139,6 @@ def update_specific_collections_via_catalog_id(catalog_id: int,
             stored_search_parameters_to_run)
 
 
-_WORKING_IP = None
-
-
 def _ingest_stac_data_using_selective_ingester_microservice(
         parameters) -> [str, int]:
     """Ingest stac data using the selective ingester microservice. Saves the
@@ -184,35 +181,19 @@ def _ingest_stac_data_using_selective_ingester_microservice(
 
     potential_ips = get_ip_from_cird_range(
         cidr_range_for_stac_selective_ingester, remove_unusable=True)
-    global _WORKING_IP
-    if _WORKING_IP is None:
-        for ip in potential_ips:
-            print("Trying to connect to: ", ip)
-            try:
-                response = requests.post(
-                    protocol_for_stac_selective_ingester + "://" + ip + ":" +
-                    str(port_for_stac_selective_ingester) + "/ingest",
-                    json=parameters,
-                    timeout=1)
-                _WORKING_IP = ip
-                return response.text, status_id
-            except requests.exceptions.ConnectionError:
-                continue
-    else:
+    for ip in potential_ips:
+        print("Trying to connect to: ", ip)
         try:
             response = requests.post(
-                protocol_for_stac_selective_ingester + "://" + _WORKING_IP +
-                ":" + str(port_for_stac_selective_ingester) + "/ingest",
+                protocol_for_stac_selective_ingester + "://" + ip + ":" +
+                str(port_for_stac_selective_ingester) + "/ingest",
                 json=parameters,
                 timeout=1)
             return response.text, status_id
         except requests.exceptions.ConnectionError:
-            _WORKING_IP = None
-            return _ingest_stac_data_using_selective_ingester_microservice(
-                parameters)
+            continue
 
-    raise ConnectionError("Could not connect to any of the following ips: " +
-                          str(potential_ips))
+    raise ConnectionError("Could not connect to stac selective ingester microservice")
 
 
 def _store_search_parameters(associated_catalogue_id,

@@ -218,6 +218,6 @@ class FileDto:
 
     api = Namespace('filename', description='File upload related operations')
     file_upload = api.model('file_upload', {
-        'filename':
+        'file':
         fields.Raw(required=True, description='filename to upload')
     })  # takes a filename
