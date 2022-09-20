@@ -18,10 +18,10 @@ def get_all_collections() -> Tuple[Dict[str, any], int] or Response:
         collection_json = response.json()
         collection_count = len(collection_json["collections"])
         return {
-                   "parameters": collection_json,
-                   "count": collection_count,
-                   "status": "success",
-               }, response.status_code
+            "parameters": collection_json,
+            "count": collection_count,
+            "status": "success",
+        }, response.status_code
 
     else:
         return _send_error_response(response)
@@ -40,9 +40,9 @@ def create_new_collection(
     if response.status_code in range(200, 203):
         collection_json = response.json()
         return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
+            "parameters": collection_json,
+            "status": "success",
+        }, response.status_code
 
     else:
         return _send_error_response(response)
@@ -61,9 +61,9 @@ def update_existing_collection(
     if response.status_code in range(200, 203):
         collection_json = response.json()
         return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
+            "parameters": collection_json,
+            "status": "success",
+        }, response.status_code
 
     else:
         return _send_error_response(response)
@@ -82,9 +82,9 @@ def get_collection_by_id(
     if response.status_code in range(200, 203):
         collection_json = response.json()
         return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
+            "parameters": collection_json,
+            "status": "success",
+        }, response.status_code
 
     else:
         return _send_error_response(response)
@@ -106,10 +106,10 @@ def remove_collection_by_id(
     if response.status_code in range(200, 203):
         collection_json = response.json()
         return {
-                   "parameters": collection_json,
-                   "search_parameters_removed": search_parameters_removed,
-                   "status": "success",
-               }, response.status_code
+            "parameters": collection_json,
+            "search_parameters_removed": search_parameters_removed,
+            "status": "success",
+        }, response.status_code
 
     else:
         return _send_error_response(response)
@@ -124,9 +124,9 @@ def get_item_from_collection(
     if response.status_code in range(200, 203):
         collection_json = response.json()
         return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
+            "parameters": collection_json,
+            "status": "success",
+        }, response.status_code
 
     else:
         return _send_error_response(response)
@@ -147,9 +147,9 @@ def add_item_to_collection(
     if response.status_code in range(200, 203):
         collection_json = response.json()
         return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
+            "parameters": collection_json,
+            "status": "success",
+        }, response.status_code
 
     else:
         return _send_error_response(response)
@@ -172,9 +172,9 @@ def update_item_in_collection(
     if response.status_code in range(200, 203):
         collection_json = response.json()
         return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
+            "parameters": collection_json,
+            "status": "success",
+        }, response.status_code
 
     else:
         return _send_error_response(response)
@@ -195,9 +195,9 @@ def remove_item_from_collection(
     if response.status_code in range(200, 203):
         collection_json = response.json()
         return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
+            "parameters": collection_json,
+            "status": "success",
+        }, response.status_code
 
     if response.status_code == 403:
         return Response(response.text, response.status_code,
@@ -218,16 +218,16 @@ def get_items_by_collection_id(
     if response.status_code in range(200, 203):
         collection_json = response.json()
         return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
+            "parameters": collection_json,
+            "status": "success",
+        }, response.status_code
 
     else:
         return _send_error_response(response)
 
 
 def _send_error_response(
-        response: requests.models.Response
+    response: requests.models.Response
 ) -> Tuple[Dict[str, any], int] or Response:
     """Send an error response to the client.
 
@@ -241,7 +241,7 @@ def _send_error_response(
                         response.headers.items())
     else:
         return {
-                   "stac_api_server_response": response.json(),
-                   "stac_api_server_response_code": response.status_code,
-                   "status": "failed"
-               }, response.status_code
+            "stac_api_server_response": response.json(),
+            "stac_api_server_response_code": response.status_code,
+            "status": "failed"
+        }, response.status_code

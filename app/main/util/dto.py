@@ -213,10 +213,10 @@ class StatusReportingDto:
                            description='already stored items count'),
         })
 
+
 class FileDto:
 
-    api = Namespace('filename',
-                    description='File upload related operations')
+    api = Namespace('filename', description='File upload related operations')
     file_upload = api.model('file_upload', {
         'filename':
         fields.Raw(required=True, description='filename to upload')

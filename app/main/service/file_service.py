@@ -8,12 +8,15 @@ from werkzeug.utils import secure_filename
 
 def check_blob_status():
     """Check if the blob storage is available.
+
     :return: A tuple containing the status and the message.
     """
     try:
-        connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
+        connection_string = current_app.config[
+            "AZURE_STORAGE_CONNECTION_STRING"]
         print("Connection string: " + connection_string)
-        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        blob_service_client = BlobServiceClient.from_connection_string(
+            connection_string)
         # close the connection
         blob_service_client.close()
 
@@ -22,22 +25,51 @@ def check_blob_status():
         return False, str(e)
 
 
+def upload_filestream_to_blob(filename: str, filestream) -> tuple[bool, str]:
+    try:
+        connection_string = current_app.config[
+            "AZURE_STORAGE_CONNECTION_STRING"]
+        print("Connection string: " + connection_string)
+        blob_service_client = BlobServiceClient.from_connection_string(
+            connection_string)
+        container_name = current_app.config[
+            "AZURE_STORAGE_BLOB_NAME_FOR_STAC_ITEMS"]
+        try:
+            # stream the filestream into blob storage
+            blob_client = blob_service_client.get_blob_client(
+                container=container_name, blob=filename)
+            blob_client.upload_blob(filestream)
+            stored_file_path = blob_client.url
+            return True, stored_file_path
+        except azure.core.exceptions.ResourceExistsError:
+            raise FileExistsError
+        finally:
+            blob_service_client.close()
+    except Exception as e:
+        return False, str(e)
+
+
 def _upload_file_to_blob(filename, blob_name=None):
     """Upload a file to the blob storage.
+
     :param filename: The file to upload.
     :return: A tuple containing the status and the message.
     """
     if not blob_name:
         blob_name = filename
     try:
-        connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
+        connection_string = current_app.config[
+            "AZURE_STORAGE_CONNECTION_STRING"]
         print("Connection string: " + connection_string)
-        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-        container_name = current_app.config["AZURE_STORAGE_BLOB_NAME_FOR_STAC_ITEMS"]
+        blob_service_client = BlobServiceClient.from_connection_string(
+            connection_string)
+        container_name = current_app.config[
+            "AZURE_STORAGE_BLOB_NAME_FOR_STAC_ITEMS"]
 
         try:
             with open(filename, "rb") as data:
-                blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
+                blob_client = blob_service_client.get_blob_client(
+                    container=container_name, blob=blob_name)
                 blob_client.upload_blob(data)
                 stored_file_path = blob_client.url
             blob_service_client.close()
@@ -69,7 +101,8 @@ def upload_staged_files_to_blob(item_id: str) -> list[str]:
     files = list_staged_files(item_id)
     urls = []
     for filename in files:
-        status, filepath = _upload_file_to_blob("./stage/" + filename, filename)
+        status, filepath = _upload_file_to_blob("./stage/" + filename,
+                                                filename)
         urls.append(filepath)
         # remove the file from the stage directory
         _delete_file(filename)
@@ -106,17 +139,22 @@ def unstage_all_files(item_id: str):
 
 def _does_file_exist_on_blob(filename: str):
     """Check if a filename exists on the blob storage.
+
     :param filename: The name of the filename to check.
     :return: A tuple containing the status and the message.
     """
     try:
-        connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
+        connection_string = current_app.config[
+            "AZURE_STORAGE_CONNECTION_STRING"]
         print("Connection string: " + connection_string)
-        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-        container_name = current_app.config["AZURE_STORAGE_BLOB_NAME_FOR_STAC_ITEMS"]
+        blob_service_client = BlobServiceClient.from_connection_string(
+            connection_string)
+        container_name = current_app.config[
+            "AZURE_STORAGE_BLOB_NAME_FOR_STAC_ITEMS"]
 
         try:
-            blob_client = blob_service_client.get_blob_client(container=container_name, blob=filename)
+            blob_client = blob_service_client.get_blob_client(
+                container=container_name, blob=filename)
             blob_client.get_blob_properties()
             blob_service_client.close()
             return True
