@@ -117,7 +117,7 @@ def update_specific_collections_via_catalog_id(catalog_id: int,
 
     stored_search_parameters: [StoredSearchParameters
                                ] = StoredSearchParameters.query.filter_by(
-                                   associated_catalog_id=catalog_id).all()
+        associated_catalog_id=catalog_id).all()
     stored_search_parameters_to_run = []
     if collections is None or len(collections) == 0:
         stored_search_parameters_to_run = stored_search_parameters
@@ -137,6 +137,9 @@ def update_specific_collections_via_catalog_id(catalog_id: int,
 
         return _run_ingestion_task_force_update(
             stored_search_parameters_to_run)
+
+
+_WORKING_IP = None
 
 
 def _ingest_stac_data_using_selective_ingester_microservice(
@@ -170,7 +173,7 @@ def _ingest_stac_data_using_selective_ingester_microservice(
 
     parameters["target_stac_catalog_url"] = target_stac_api_url
     parameters["callback_endpoint"] = current_app.config[
-        "STAC_SELECTIVE_INGESTER_CALLBACK_ENDPOINT"] + "/" + str(status_id)
+                                          "STAC_SELECTIVE_INGESTER_CALLBACK_ENDPOINT"] + "/" + str(status_id)
 
     cidr_range_for_stac_selective_ingester = current_app.config[
         'STAC_SELECTIVE_INGESTER_CIDR_RANGE']
@@ -181,16 +184,32 @@ def _ingest_stac_data_using_selective_ingester_microservice(
 
     potential_ips = get_ip_from_cird_range(
         cidr_range_for_stac_selective_ingester, remove_unusable=True)
-    for ip in potential_ips:
-        print("Trying to connect to: ", ip)
+    global _WORKING_IP
+    if _WORKING_IP is None:
+        for ip in potential_ips:
+            print("Trying to connect to: ", ip)
+            try:
+                response = requests.post(
+                    protocol_for_stac_selective_ingester + "://" + ip + ":" +
+                    str(port_for_stac_selective_ingester) + "/ingest",
+                    json=parameters,
+                    timeout=1)
+                _WORKING_IP = ip
+                return response.text, status_id
+            except requests.exceptions.ConnectionError:
+                continue
+    else:
         try:
             response = requests.post(
-                protocol_for_stac_selective_ingester + "://" + ip + ":" +
-                str(port_for_stac_selective_ingester) + "/ingest",
-                json=parameters)
+                protocol_for_stac_selective_ingester + "://" + _WORKING_IP +
+                ":" + str(port_for_stac_selective_ingester) + "/ingest",
+                json=parameters,
+                timeout=1)
             return response.text, status_id
         except requests.exceptions.ConnectionError:
-            continue
+            _WORKING_IP = None
+            return _ingest_stac_data_using_selective_ingester_microservice(
+                parameters)
 
     raise ConnectionError("Could not connect to any of the following ips: " +
                           str(potential_ips))
@@ -270,7 +289,7 @@ def _update_stac_data_using_selective_ingester_microservice(
 
     parameters["target_stac_catalog_url"] = target_stac_api_url
     parameters["callback_endpoint"] = current_app.config[
-        "STAC_SELECTIVE_INGESTER_CALLBACK_ENDPOINT"] + "/" + str(status_id)
+                                          "STAC_SELECTIVE_INGESTER_CALLBACK_ENDPOINT"] + "/" + str(status_id)
 
     cidr_range_for_stac_selective_ingester = current_app.config[
         'STAC_SELECTIVE_INGESTER_CIDR_RANGE']
@@ -295,8 +314,8 @@ def _update_stac_data_using_selective_ingester_microservice(
 
 
 def _run_ingestion_task_force_update(
-    stored_search_parameters: [StoredSearchParameters
-                               ]) -> List[Tuple[str, int]]:
+        stored_search_parameters: [StoredSearchParameters
+                                   ]) -> List[Tuple[str, int]]:
     """Calls the _update_stac_data_using_selective_ingester_microservice on
     each set of StoredSearchParameters setting the update flag to true.
 

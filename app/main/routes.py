@@ -3,9 +3,9 @@ from flask import current_app
 
 def route(path: str, **kwargs) -> str:
     BASE_STAC_URL = current_app.config["BASE_STAC_API_URL"]
-    VALIDATION_STAC_URL = current_app.config["VALIDATION_STAC_URL"]
+    # STAC_VALIDATOR_API_CIDR_RANGE = current_app.config["STAC_VALIDATOR_API_CIDR_RANGE"]
 
     return {
         "COLLECTIONS": BASE_STAC_URL + "/collections/",
-        "VALIDATE": VALIDATION_STAC_URL + "/",
+        # "VALIDATE": STAC_VALIDATOR_API_CIDR_RANGE + "/",
     }[path]
