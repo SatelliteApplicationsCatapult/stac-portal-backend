@@ -307,7 +307,7 @@ def _update_stac_data_using_selective_ingester_microservice(
             response = requests.post(
                 protocol_for_stac_selective_ingester + "://" + ip + ":" +
                 str(port_for_stac_selective_ingester) + "/ingest",
-                json=parameters)
+                json=parameters, timeout=1)
             return response.text, status_id
         except requests.exceptions.ConnectionError:
             continue
