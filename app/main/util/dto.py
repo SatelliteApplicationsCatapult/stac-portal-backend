@@ -214,6 +214,7 @@ class StatusReportingDto:
         })
 
 
+
 class FileDto:
 
     api = Namespace('filename', description='File upload related operations')
@@ -221,3 +222,11 @@ class FileDto:
         'file':
         fields.Raw(required=True, description='filename to upload')
     })  # takes a filename
+
+class UploadDto:
+
+    api = Namespace('upload', description='upload related operations')
+    upload = api.model('upload', {
+        'file':
+        fields.Raw(required=True, description='files to upload')
+    })  # takes a file
