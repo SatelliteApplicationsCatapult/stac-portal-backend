@@ -54,7 +54,6 @@ def does_file_exist_on_blob(filename: str) -> bool:
     try:
         connection_string = current_app.config[
             "AZURE_STORAGE_CONNECTION_STRING"]
-        print("Connection string: " + connection_string)
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string)
         container_name = current_app.config[
