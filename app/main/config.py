@@ -46,7 +46,7 @@ class StagingConfig(Config):
     TARGET_STAC_API_SERVER = os.getenv('TARGET_STAC_API_SERVER', "")
     AZURE_STORAGE_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING', "")
     THIS_APP_FQDN = os.getenv('THIS_APP_FQDN', "")
-    STAC_SELECTIVE_INGESTER_CALLBACK_ENDPOINT = THIS_APP_FQDN + "/status_reporting/loading_public_stac_records"
+    STAC_SELECTIVE_INGESTER_CALLBACK_ENDPOINT = "http://" + THIS_APP_FQDN + "/status_reporting/loading_public_stac_records"
 
 
 

@@ -148,7 +148,7 @@ def _ingest_stac_data_using_selective_ingester_microservice(
     :return: Response from the ingestion microservice
     """
     source_stac_api_url = parameters['source_stac_catalog_url']
-    target_stac_api_url = "https://stac-api-server.azurewebsites.net"
+    target_stac_api_url = current_app.config['TARGET_STAC_API_SERVER']
     update = parameters['update']
     status_id, associated_catalogue_id = _make_stac_ingestion_status_entry(
         source_stac_api_url, target_stac_api_url, update)
