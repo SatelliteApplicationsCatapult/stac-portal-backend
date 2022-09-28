@@ -172,28 +172,21 @@ def _ingest_stac_data_using_selective_ingester_microservice(
     parameters["callback_endpoint"] = current_app.config[
                                           "STAC_SELECTIVE_INGESTER_CALLBACK_ENDPOINT"] + "/" + str(status_id)
 
-    cidr_range_for_stac_selective_ingester = current_app.config[
-        'STAC_SELECTIVE_INGESTER_CIDR_RANGE']
-    port_for_stac_selective_ingester = current_app.config[
-        'STAC_SELECTIVE_INGESTER_PORT']
-    protocol_for_stac_selective_ingester = current_app.config[
-        'STAC_SELECTIVE_INGESTER_PROTOCOL']
+    endpoint_for_stac_selective_ingester = current_app.config["STAC_SELECTIVE_INGESTER_ENDPOINT"]
 
-    potential_ips = get_ip_from_cird_range(
-        cidr_range_for_stac_selective_ingester, remove_unusable=True)
-    for ip in potential_ips:
-        print("Trying to connect to: ", ip)
-        try:
-            response = requests.post(
-                protocol_for_stac_selective_ingester + "://" + ip + ":" +
-                str(port_for_stac_selective_ingester) + "/ingest",
-                json=parameters,
-                timeout=1)
-            return response.text, status_id
-        except requests.exceptions.ConnectionError:
-            continue
-
-    raise ConnectionError("Could not connect to stac selective ingester microservice")
+    try:
+        endpoint = endpoint_for_stac_selective_ingester
+        # if it does not end with a slash, add one
+        if not endpoint.endswith("/"):
+            endpoint += "/"
+        endpoint += "ingest"
+        print("Endpoint: " + endpoint)
+        response = requests.post(
+            endpoint,
+            json=parameters)
+        return response.text, status_id
+    except requests.exceptions.ConnectionError:
+        raise ConnectionError("Could not connect to stac selective ingester microservice")
 
 
 def _store_search_parameters(associated_catalogue_id,
