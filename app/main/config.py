@@ -44,7 +44,6 @@ class StagingConfig(Config):
     DEBUG = False
     ENV = "Staging"
     SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI", "postgresql://postgres:postgres@localhost:5432/postgres")
-    print("SQLALCHEMY_DATABASE_URI: ", SQLALCHEMY_DATABASE_URI)
     STAC_VALIDATOR_API_CIDR_RANGE = os.getenv('STAC_VALIDATOR_API_CIDR_RANGE', '')
     STAC_SELECTIVE_INGESTER_CIDR_RANGE = os.getenv('STAC_SELECTIVE_INGESTER_CIDR_RANGE', "")
     TARGET_STAC_API_SERVER = os.getenv('TARGET_STAC_API_SERVER', "")

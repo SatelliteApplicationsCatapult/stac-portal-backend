@@ -46,21 +46,3 @@ class CommitStacAssets(Resource):
             return {"message": message}, 200
         except FileExistsError:
             return {"message": "File already exists"}, 409
-
-    # @api.doc(description="Check list of staged files")
-    # @api.response(200, "Success")
-    # def get(self, item_id):
-    #     return list_staged_files(item_id)
-    #
-    # @api.doc(description="Commit staged files")
-    # @api.response(200, "Success")
-    # def put(self, item_id):
-    #     return upload_staged_files_to_blob(item_id)
-
-
-# @api.route("/stac_assets/<item_id>/delete")
-# class DeleteStacAssets(Resource):
-#     @api.doc(description="Delete stac assets to the backend")
-#     @api.response(200, "Success")
-#     def delete(self):
-#         pass
