@@ -11,7 +11,6 @@ app = create_app(os.getenv('FLASK_ENV') or 'dev')
 app.register_blueprint(blueprint)
 app.app_context().push()
 CORS(app, resources={r"/*": {"origins": "*"}})
-
 cli = FlaskGroup(app)
 
 migrate = Migrate()
