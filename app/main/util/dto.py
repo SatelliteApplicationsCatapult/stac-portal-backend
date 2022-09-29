@@ -160,12 +160,12 @@ class PublicCatalogsDto:
                                    description='collections to be ingested'
                                    , example=['landsat-8-l1-c1',
                                    'sentinel-2-l1c', 'landsat-c2-l2']),
-        'intersects': fields.String(required=False,
-                                    description='geojson of the area to be ingested'
-                                    , example='{}'),
-        'ids': fields.List(fields.String, required=False,
-                           description='ids of the items to be ingested'
-                           , example=[]),
+        # 'intersects': fields.String(required=False,
+        #                             description='geojson of the area to be ingested'
+        #                             , example='{}'),
+        # 'ids': fields.List(fields.String, required=False,
+        #                    description='ids of the items to be ingested'
+        #                    , example=[]),
         })
     update_stac_collections_specify_collection_ids = \
         api.model('update_stac_collections_specify_collection_ids',

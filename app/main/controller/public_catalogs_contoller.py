@@ -4,6 +4,7 @@ from flask_restx import Resource
 
 from ..service import public_catalogs_service
 from ..util.dto import PublicCatalogsDto
+from ..custom_exceptions import *
 
 api = PublicCatalogsDto.api
 
@@ -33,12 +34,12 @@ class PublicCatalogs(Resource):
                 name, url, description, stac_version), 201
         except IndexError as e:
             return {
-                'message': 'Some elements in json body are not present',
-            }, 400
+                       'message': 'Some elements in json body are not present',
+                   }, 400
         except sqlalchemy.exc.IntegrityError as e:
             return {
-                'message': 'Catalog with this url already exists',
-            }, 409
+                       'message': 'Catalog with this url already exists',
+                   }, 409
 
 
 @api.route('/<int:public_catalog_id>')
@@ -48,11 +49,12 @@ class PublicCatalogsViaId(Resource):
     @api.response(200, 'Success')
     @api.response(404, 'Public catalog not found')
     def get(self, public_catalog_id):
-        try:
-            return public_catalogs_service.get_public_catalog_by_id(
-                public_catalog_id)
-        except AttributeError:
-            return {'message': 'Public catalog not found'}, 404
+        # try:
+        return public_catalogs_service.get_public_catalog_by_id(
+            public_catalog_id)
+
+        # except AttributeError:
+        #     return {'message': 'Public catalog not found'}, 404
 
     @api.doc(description='Remove a public catalog via its id')
     @api.response(200, 'Success')
@@ -61,7 +63,7 @@ class PublicCatalogsViaId(Resource):
         try:
             return public_catalogs_service.remove_public_catalog_by_id(
                 public_catalog_id)
-        except sqlalchemy.orm.exc.UnmappedInstanceError:
+        except CatalogDoesNotExistError as e:
             return {'message': 'No result found'}, 404
 
 
@@ -76,13 +78,13 @@ class GetStacRecordsSpecifyingPublicCatalogId(Resource):
         try:
             return public_catalogs_service.get_specific_collections_via_catalog_id(
                 public_catalog_id, data), 200
-        except LookupError as e:
+        except CatalogDoesNotExistError as e:
             return {'message': 'Public catalog not found'}, 404
         except ConnectionError as e:
             return {
-                'message':
-                'Connection Error, ingestion microservice is probably down'
-            }, 500
+                       'message':
+                           'Connection Error, ingestion microservice is probably down'
+                   }, 500
 
 
 @api.route('/records/update')
@@ -91,14 +93,20 @@ class UpdateAllStacRecords(Resource):
     @api.doc(
         description='Update all stored stac records from all public catalogs')
     def get(self):
-        result = public_catalogs_service.update_all_stac_records()
-        response = []
-        for i in result:
-            response.append({
-                "message": i[0],
-                "callback_id": i[1],
-            })
-        return response, 200
+        try:
+            result = public_catalogs_service.update_all_stac_records()
+            response = []
+            for i in result:
+                response.append({
+                    "message": i[0],
+                    "callback_id": i[1],
+                })
+            return response, 200
+        except ConnectionError as e:
+            return {
+                       'message':
+                           'Connection Error, ingestion microservice is probably down'
+                   }, 500
 
 
 @api.route('/<int:public_catalog_id>/records/update')
@@ -111,13 +119,13 @@ class UpdateStacRecordsSpecifyingPublicCatalogId(Resource):
         try:
             return public_catalogs_service.update_specific_collections_via_catalog_id(
                 public_catalog_id)
-        except AttributeError:
+        except CatalogDoesNotExistError:
             return {'message': 'Public catalog not found'}, 404
         except ConnectionError as e:
             return {
-                'message':
-                'Connection Error, ingestion microservice is probably down'
-            }, 500
+                       'message':
+                           'Connection Error, ingestion microservice is probably down'
+                   }, 500
 
     @api.doc(description="""Update specific collections from catalog.""")
     @api.expect(
@@ -132,16 +140,15 @@ class UpdateStacRecordsSpecifyingPublicCatalogId(Resource):
             response = []
             for i in result:
                 response.append({
-                    "message": i[0],
-                    "callback_id": i[1],
+                    "message": i,
                 })
             return response, 200
-        except LookupError as e:
+        except CatalogDoesNotExistError as e:
             return {
-                'message': 'Public catalog with specified id not found'
-            }, 404
+                       'message': 'Public catalog with specified id not found'
+                   }, 404
         except ConnectionError as e:
             return {
-                'message':
-                'Connection Error, ingestion microservice is probably down'
-            }, 500
+                       'message':
+                           'Connection Error, ingestion microservice is probably down'
+                   }, 500

@@ -18,7 +18,7 @@ def get_stac_ingestion_status_by_id(id: str) -> Dict[any, any]:
 
 def _make_stac_ingestion_status_entry(source_stac_api_url: str,
                                       target_stac_api_url: str,
-                                      update: bool) -> (int, int):
+                                      update: bool) -> int:
     print("source_stac_api_url: ", source_stac_api_url)
     public_catalogue_entry: PublicCatalog = PublicCatalog.query.filter(
         PublicCatalog.url == source_stac_api_url).first()
@@ -34,7 +34,7 @@ def _make_stac_ingestion_status_entry(source_stac_api_url: str,
     stac_ingestion_status.time_started = datetime.datetime.utcnow()
     db.session.add(stac_ingestion_status)
     db.session.commit()
-    return stac_ingestion_status.id, public_catalogue_entry.id
+    return stac_ingestion_status.id
 
 
 def set_stac_ingestion_status_entry(
