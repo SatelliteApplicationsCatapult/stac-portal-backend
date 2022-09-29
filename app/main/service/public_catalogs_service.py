@@ -94,7 +94,10 @@ def get_specific_collections_via_catalog_id(catalog_id: int,
     if parameters is None:
         parameters = {}
     parameters['source_stac_catalog_url'] = public_catalogue_entry.url
-    return _ingest_stac_data_using_selective_ingester_microservice(catalog_id, parameters)
+    target_stac_api_url = current_app.config['TARGET_STAC_API_SERVER']
+    _store_search_parameters(catalog_id, parameters)
+    parameters["target_stac_catalog_url"] = target_stac_api_url
+    return _call_ingestion_microservice(parameters)
 
 
 def update_all_stac_records() -> list[str]:
@@ -150,28 +153,7 @@ def update_specific_collections_via_catalog_id(catalog_id: int,
             stored_search_parameters_to_run)
 
 
-def _ingest_stac_data_using_selective_ingester_microservice(
-        associated_catalog_id, parameters) -> [str, int]:
-    """Ingest stac data using the selective ingester microservice. Saves the
-    search parameters to the database so the data can be updated later on.
-
-    :param parameters: Parameters for the search from stac item-search standard
-    :return: Response from the ingestion microservice
-    """
-    target_stac_api_url = current_app.config['TARGET_STAC_API_SERVER']
-    _store_search_parameters(associated_catalog_id, parameters)
-    parameters["target_stac_catalog_url"] = target_stac_api_url
-    # try:
-    #     response = requests.post(
-    #         endpoint_for_stac_selective_ingester,
-    #         json=parameters, timeout=None)
-    #     return response.text
-    # except requests.exceptions.ConnectionError:
-    #     raise ConnectionError("Could not connect to stac selective ingester microservice")
-    return _call_ingestion_microservice(associated_catalog_id, parameters)
-
-
-def _call_ingestion_microservice(associated_catalog_id, parameters) -> str:
+def _call_ingestion_microservice(parameters) -> str:
     souce_stac_catalog_url = parameters['source_stac_catalog_url']
     target_stac_catalog_url = current_app.config['TARGET_STAC_API_SERVER']
     update = parameters['update']
@@ -191,13 +173,14 @@ def _call_ingestion_microservice(associated_catalog_id, parameters) -> str:
         newly_stored_items_count = response_json['newly_stored_items_count']
         updated_items_count = response_json['updated_items_count']
         already_stored_items_count = response_json['already_stored_items_count']
-        set_stac_ingestion_status_entry(int(callback_id), newly_stored_collections_count,newly_stored_collections,updated_collections_count,updated_collections,newly_stored_items_count,updated_items_count,already_stored_items_count)
+        set_stac_ingestion_status_entry(int(callback_id), newly_stored_collections_count, newly_stored_collections,
+                                        updated_collections_count, updated_collections, newly_stored_items_count,
+                                        updated_items_count, already_stored_items_count)
         return response_json
 
     except Exception as e:
         print("Error: " + str(e))
         raise ConnectionError("Could not connect to stac selective ingester microservice")
-
 
 
 def _store_search_parameters(associated_catalogue_id,
@@ -257,7 +240,7 @@ def remove_search_params_for_collection_id(collection_id: str) -> int:
     return num_deleted
 
 
-def _update_stac_data_using_selective_ingester_microservice(catalog_id: str,
+def _update_stac_data_using_selective_ingester_microservice(
         parameters) -> str:
     """Update stac data using the selective ingester microservice. Does not
     save the search parameters to the database as it is called from them
@@ -269,21 +252,13 @@ def _update_stac_data_using_selective_ingester_microservice(catalog_id: str,
     target_stac_api_url = current_app.config["TARGET_STAC_API_SERVER"]
     parameters["target_stac_catalog_url"] = target_stac_api_url
     parameters["update"] = True
-    # try:
-    #     response = requests.post(
-    #         endpoint_for_stac_selective_ingester,
-    #         json=parameters, timeout=None)
-    #     return response.text
-    # except requests.exceptions.ConnectionError:
-    #     raise ConnectionError("Could not connect to stac selective ingester microservice")
-    return _call_ingestion_microservice(catalog_id, parameters)
+    return _call_ingestion_microservice(parameters)
 
 
 def _run_ingestion_task_force_update(
         stored_search_parameters: [StoredSearchParameters
                                    ]) -> list[str]:
-    """Calls the _update_stac_data_using_selective_ingester_microservice on
-    each set of StoredSearchParameters setting the update flag to true.
+    """ Calls the microservice on each set of StoredSearchParameters setting the update flag to true.
 
     :param stored_search_parameters: List of StoredSearchParameters to use for update operations
     :return: List of tuples containing the responses from the selective ingester microservice and the work id
@@ -292,13 +267,12 @@ def _run_ingestion_task_force_update(
     for i in stored_search_parameters:
         print("Updating with search parameters:", i)
         try:
-            catalog_id = i.associated_catalog_id
             used_search_parameters = json.loads(i.used_search_parameters)
             used_search_parameters["update"] = True
-            microservice_response = _update_stac_data_using_selective_ingester_microservice(catalog_id,
+            microservice_response = _update_stac_data_using_selective_ingester_microservice(
                 used_search_parameters)
             responses_from_ingestion_microservice.append(
-                (microservice_response))
+                microservice_response)
         except ValueError:
             pass
     return responses_from_ingestion_microservice
