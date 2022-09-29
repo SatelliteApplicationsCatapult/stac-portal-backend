@@ -16,10 +16,9 @@ def get_stac_ingestion_status_by_id(id: str) -> Dict[any, any]:
     return a.as_dict()
 
 
-def _make_stac_ingestion_status_entry(source_stac_api_url: str,
-                                      target_stac_api_url: str,
-                                      update: bool) -> int:
-    print("source_stac_api_url: ", source_stac_api_url)
+def make_stac_ingestion_status_entry(source_stac_api_url: str,
+                                     target_stac_api_url: str,
+                                     update: bool) -> int:
     public_catalogue_entry: PublicCatalog = PublicCatalog.query.filter(
         PublicCatalog.url == source_stac_api_url).first()
 
@@ -38,7 +37,7 @@ def _make_stac_ingestion_status_entry(source_stac_api_url: str,
 
 
 def set_stac_ingestion_status_entry(
-        status_id: str, newly_stored_collections_count: int,
+        status_id: int, newly_stored_collections_count: int,
         newly_stored_collections: List[str], updated_collections_count: int,
         updated_collections: List[str], newly_stored_items_count: int,
         updated_items_count: int,
