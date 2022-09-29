@@ -25,12 +25,11 @@ def check_blob_status():
 def upload_filestream_to_blob(filename: str, filestream) -> str:
     connection_string = current_app.config[
         "AZURE_STORAGE_CONNECTION_STRING"]
-    print("Connection string: " + connection_string)
     blob_service_client = BlobServiceClient.from_connection_string(
         connection_string)
     container_name = current_app.config[
         "AZURE_STORAGE_BLOB_NAME_FOR_STAC_ITEMS"]
-    if _does_file_exist_on_blob(filename):
+    if does_file_exist_on_blob(filename):
         raise FileExistsError
     try:
         # stream the filestream into blob storage
@@ -46,7 +45,7 @@ def upload_filestream_to_blob(filename: str, filestream) -> str:
         blob_service_client.close()
 
 
-def _does_file_exist_on_blob(filename: str):
+def does_file_exist_on_blob(filename: str) -> bool:
     """Check if a filename exists on the blob storage.
 
     :param filename: The name of the filename to check.
@@ -55,7 +54,6 @@ def _does_file_exist_on_blob(filename: str):
     try:
         connection_string = current_app.config[
             "AZURE_STORAGE_CONNECTION_STRING"]
-        print("Connection string: " + connection_string)
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string)
         container_name = current_app.config[
@@ -73,6 +71,5 @@ def _does_file_exist_on_blob(filename: str):
             return False
         finally:
             blob_service_client.close()
-
     except Exception as e:
-        return False, str(e)
+        return False
