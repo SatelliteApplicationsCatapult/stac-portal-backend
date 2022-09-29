@@ -25,7 +25,7 @@ class DevelopmentConfig(Config):
 class StagingConfig(Config):
     DEBUG = False
     ENV = "Staging"
-    SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI", "")
+    SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI", "postgresql://postgres:postgres@ctplt-pda-rg-dev-psqlflexibleserver.postgres.database.azure.com:5432/stacportaldb")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     TARGET_STAC_API_SERVER = os.getenv('TARGET_STAC_API_SERVER', "http://ctplt-pda-rg-dev-stac-api-server.azurewebsites.net/")
     STAC_VALIDATOR_ENDPOINT = os.getenv('STAC_VALIDATOR_ENDPOINT', "http://stac-validator-api.microservices.ctplt-pda-rg-dev.azure.com")
