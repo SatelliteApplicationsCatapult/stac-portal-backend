@@ -36,7 +36,7 @@ class PublicCatalogs(Resource):
             return {
                        'message': 'Some elements in json body are not present',
                    }, 400
-        except sqlalchemy.exc.IntegrityError as e:
+        except CatalogAlreadyExistsError as e:
             return {
                        'message': 'Catalog with this url already exists',
                    }, 409
@@ -49,12 +49,12 @@ class PublicCatalogsViaId(Resource):
     @api.response(200, 'Success')
     @api.response(404, 'Public catalog not found')
     def get(self, public_catalog_id):
-        # try:
-        return public_catalogs_service.get_public_catalog_by_id(
+        try:
+            return public_catalogs_service.get_public_catalog_by_id(
             public_catalog_id)
 
-        # except AttributeError:
-        #     return {'message': 'Public catalog not found'}, 404
+        except CatalogDoesNotExistError:
+            return {'message': 'Public catalog not found'}, 404
 
     @api.doc(description='Remove a public catalog via its id')
     @api.response(200, 'Success')

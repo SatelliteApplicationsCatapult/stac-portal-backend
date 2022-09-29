@@ -21,14 +21,17 @@ def store_new_public_catalog(name: str, url: str, description: str,
     :param stac_version: Stac version catalogue used
     :return: New catalogue parameters from database as dict
     """
-    a: PublicCatalog = PublicCatalog()
-    a.name = name
-    a.url = url
-    a.description = description
-    a.stac_version = stac_version
-    db.session.add(a)
-    db.session.commit()
-    return a.as_dict()
+    try:
+        a: PublicCatalog = PublicCatalog()
+        a.name = name
+        a.url = url
+        a.description = description
+        a.stac_version = stac_version
+        db.session.add(a)
+        db.session.commit()
+        return a.as_dict()
+    except sqlalchemy.exc.IntegrityError:
+        raise CatalogAlreadyExistsError
 
 
 def get_all_public_catalogs() -> List[Dict[any, any]]:
@@ -46,9 +49,12 @@ def get_public_catalog_by_id(public_catalog_id: int) -> Dict[any, any]:
     :param public_catalog_id: Id of the public catalog
     :return: Public catalog as dict
     """
-    a: PublicCatalog = PublicCatalog.query.filter_by(
-        id=public_catalog_id).first()
-    return a.as_dict()
+    try:
+        a: PublicCatalog = PublicCatalog.query.filter_by(
+            id=public_catalog_id).first()
+        return a.as_dict()
+    except AttributeError:
+        raise CatalogDoesNotExistError
 
 
 def remove_public_catalog_by_id(public_catalog_id: int) -> Dict[any, any]:
