@@ -15,6 +15,8 @@ class PublicCatalog(db.Model):
     added_on: datetime.datetime = db.Column(db.DateTime,
                                             nullable=False,
                                             default=datetime.datetime.utcnow)
+    stored_search_parameters = db.relationship("StoredSearchParameters", backref="public_catalogs", lazy="dynamic",
+                                               cascade="all, delete-orphan")
 
     def get_number_of_stored_search_parameters(self):
         return StoredSearchParameters.query.filter_by(
@@ -48,4 +50,3 @@ class StoredSearchParameters(db.Model):
                                                          ondelete='CASCADE'),
                                            nullable=False,
                                            index=True)
-    parent = db.relationship('PublicCatalog', backref=backref('StoredSearchParameters', passive_deletes=True))
