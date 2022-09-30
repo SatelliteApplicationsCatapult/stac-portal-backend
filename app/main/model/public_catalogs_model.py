@@ -15,6 +15,7 @@ class PublicCatalog(db.Model):
     added_on: datetime.datetime = db.Column(db.DateTime,
                                             nullable=False,
                                             default=datetime.datetime.utcnow)
+
     def get_number_of_stored_search_parameters(self):
         return StoredSearchParameters.query.filter_by(
             associated_catalog_id=self.id).count()
@@ -48,4 +49,3 @@ class StoredSearchParameters(db.Model):
                                            nullable=False,
                                            index=True)
     parent = db.relationship('PublicCatalog', backref=backref('StoredSearchParameters', passive_deletes=True))
-

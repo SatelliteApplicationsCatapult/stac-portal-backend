@@ -1,4 +1,5 @@
 import json
+from threading import Thread
 from typing import Dict, List
 
 import requests
@@ -40,7 +41,7 @@ def get_all_public_catalogs() -> List[Dict[any, any]]:
 
     :return: List of all public catalogs as list of dicts
     """
-    a: PublicCatalog = PublicCatalog.query.all()
+    a: [PublicCatalog] = PublicCatalog.query.all()
     return [i.as_dict() for i in a]
 
 
@@ -97,10 +98,12 @@ def get_specific_collections_via_catalog_id(catalog_id: int,
     target_stac_api_url = current_app.config['TARGET_STAC_API_SERVER']
     _store_search_parameters(catalog_id, parameters)
     parameters["target_stac_catalog_url"] = target_stac_api_url
+    # result = q.enqueue(_call_ingestion_microservice, parameters)
+    # return result.id
     return _call_ingestion_microservice(parameters)
 
 
-def update_all_stac_records() -> list[str]:
+def update_all_stac_records() -> list[int]:
     """Run the search using every stored search parameter.
 
     :return: List of tuples containing the responses from the selective ingester microservice and the work id
@@ -112,7 +115,7 @@ def update_all_stac_records() -> list[str]:
 
 def update_specific_collections_via_catalog_id(catalog_id: int,
                                                collections: [str] = None
-                                               ) -> list[str]:
+                                               ) -> list[int]:
     """Get all stored search parameters for a specific catalogue id. Then
     combine them all together and pass on for update.
 
@@ -153,34 +156,42 @@ def update_specific_collections_via_catalog_id(catalog_id: int,
             stored_search_parameters_to_run)
 
 
-def _call_ingestion_microservice(parameters) -> str:
+def _call_ingestion_microservice(parameters) -> int:
     souce_stac_catalog_url = parameters['source_stac_catalog_url']
     target_stac_catalog_url = current_app.config['TARGET_STAC_API_SERVER']
     update = parameters['update']
     callback_id = make_stac_ingestion_status_entry(souce_stac_catalog_url, target_stac_catalog_url, update)
     parameters['callback_id'] = callback_id
     microservice_endpoint = current_app.config['STAC_SELECTIVE_INGESTER_ENDPOINT']
-    try:
-        response = requests.post(
-            microservice_endpoint,
-            json=parameters, timeout=None)
-        # convert response to json
-        response_json = response.json()
-        newly_stored_collections = response_json['newly_stored_collections']
-        newly_stored_collections_count = response_json['newly_stored_collections_count']
-        updated_collections_count = response_json['updated_collections_count']
-        updated_collections = response_json['updated_collections']
-        newly_stored_items_count = response_json['newly_stored_items_count']
-        updated_items_count = response_json['updated_items_count']
-        already_stored_items_count = response_json['already_stored_items_count']
-        set_stac_ingestion_status_entry(int(callback_id), newly_stored_collections_count, newly_stored_collections,
-                                        updated_collections_count, updated_collections, newly_stored_items_count,
-                                        updated_items_count, already_stored_items_count)
-        return response_json
 
-    except Exception as e:
-        print("Error: " + str(e))
-        raise ConnectionError("Could not connect to stac selective ingester microservice")
+    def run_async(_parameters,_app):
+        try:
+            print("Microservice endpoint: " + microservice_endpoint)
+            response = requests.post(
+                microservice_endpoint,
+                json=_parameters, timeout=None)
+            # convert response to json
+            response_json = response.json()
+            newly_stored_collections = response_json['newly_stored_collections']
+            newly_stored_collections_count = response_json['newly_stored_collections_count']
+            updated_collections_count = response_json['updated_collections_count']
+            updated_collections = response_json['updated_collections']
+            newly_stored_items_count = response_json['newly_stored_items_count']
+            updated_items_count = response_json['updated_items_count']
+            already_stored_items_count = response_json['already_stored_items_count']
+            with _app.app_context():
+                set_stac_ingestion_status_entry(int(callback_id), newly_stored_collections_count, newly_stored_collections,
+                                                updated_collections_count, updated_collections, newly_stored_items_count,
+                                                updated_items_count, already_stored_items_count)
+            return response_json
+
+        except Exception as e:
+            print("Error: " + str(e))
+            raise ConnectionError("Could not connect to stac selective ingester microservice")
+    app = current_app._get_current_object() # TODO: Is there a better way to do this?
+    thread = Thread(target=run_async, args=(parameters,app))
+    thread.start()
+    return callback_id
 
 
 def _store_search_parameters(associated_catalogue_id,
@@ -241,7 +252,7 @@ def remove_search_params_for_collection_id(collection_id: str) -> int:
 
 
 def _update_stac_data_using_selective_ingester_microservice(
-        parameters) -> str:
+        parameters) -> int:
     """Update stac data using the selective ingester microservice. Does not
     save the search parameters to the database as it is called from them
     anyways.
@@ -257,7 +268,7 @@ def _update_stac_data_using_selective_ingester_microservice(
 
 def _run_ingestion_task_force_update(
         stored_search_parameters: [StoredSearchParameters
-                                   ]) -> list[str]:
+                                   ]) -> list[int]:
     """ Calls the microservice on each set of StoredSearchParameters setting the update flag to true.
 
     :param stored_search_parameters: List of StoredSearchParameters to use for update operations
