@@ -47,5 +47,5 @@ class StoredSearchParameters(db.Model):
                                                          ondelete='CASCADE'),
                                            nullable=False,
                                            index=True)
-    parent = db.relationship('PublicCatalog', backref=backref('StoredSearchParameters', passive_deletes=True))
+    parent = db.relationship("PublicCatalog", backref=backref("StoredSearchParameters", cascade="all, delete-orphan", passive_deletes=True))
 
