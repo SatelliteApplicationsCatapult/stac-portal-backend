@@ -1,7 +1,5 @@
 import datetime
 
-from sqlalchemy.orm import backref
-
 from .. import db
 
 
@@ -17,6 +15,8 @@ class PublicCatalog(db.Model):
                                             default=datetime.datetime.utcnow)
     stored_search_parameters = db.relationship("StoredSearchParameters", backref="public_catalogs", lazy="dynamic",
                                                cascade="all, delete-orphan")
+    stored_ingestion_statuses = db.relationship("StacIngestionStatus", backref="public_catalogs", lazy="dynamic",
+                                                cascade="all, delete-orphan")
 
     def get_number_of_stored_search_parameters(self):
         return StoredSearchParameters.query.filter_by(
@@ -43,8 +43,6 @@ class StoredSearchParameters(db.Model):
     used_search_parameters: str = db.Column(db.Text,
                                             nullable=False,
                                             unique=True)
-    # todo: help needed, how to make this on delete cascade work? when deleting a public catalog, all associated
-    #  search parameters should be deleted as well
     associated_catalog_id: int = db.Column(db.Integer,
                                            db.ForeignKey('public_catalogs.id',
                                                          ondelete='CASCADE'),
