@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 from flask_restx import Namespace, fields
+from werkzeug.datastructures import FileStorage
 
 
 class CollectionsDto:
@@ -191,18 +192,8 @@ class StatusReportingDto:
 
 class FileDto:
     api = Namespace('files', description='File upload related operations')
-    file_upload = api.model('file_upload', {
-        'file':
-            fields.Raw(required=True, description='filename to upload')
-    })  # takes a filename
-
-
-class UploadDto:
-    api = Namespace('upload', description='upload related operations')
-    upload = api.model('upload', {
-        'file':
-            fields.Raw(required=True, description='files to upload')
-    })  # takes a file
+    file_upload = api.parser()
+    file_upload.add_argument('file', location='files', type=FileStorage, required=True)
 
 
 class GdalInfoDto:
