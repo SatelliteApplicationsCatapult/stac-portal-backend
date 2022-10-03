@@ -35,8 +35,12 @@ class CheckBlobStatus(Resource):
 class CommitStacAssets(Resource):
 
     @api.doc(description="Upload stac assets to the azure storage blob")
+    @api.response(200, "Success")
+    @api.response(409, "Item already exists")
+    @api.expect(FileDto.file_upload, validate=True)
     def post(self, item_id):
-        file = request.files["file"]
+        args = FileDto.file_upload.parse_args()
+        file = args["file"]
         filename = secure_filename(file.filename)
         if item_id not in filename:
             filename = f"{item_id}_{filename}"
