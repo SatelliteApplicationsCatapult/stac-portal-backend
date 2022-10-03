@@ -3,31 +3,6 @@
 from flask_restx import Namespace, fields
 
 
-class UserDto:
-    api = Namespace('user', description='user related operations')
-    user = api.model(
-        'user', {
-            'email': fields.String(required=True,
-                                   description='user email address'),
-            'username': fields.String(required=True,
-                                      description='user username'),
-            'password': fields.String(required=True,
-                                      description='user password'),
-            'public_id': fields.String(description='user Identifier'),
-        })
-
-
-class AuthDto:
-    api = Namespace('auth', description='authentication related operations')
-    user_auth = api.model(
-        'auth_details', {
-            'email':
-                fields.String(required=True, description='The email address'),
-            'password':
-                fields.String(required=True, description='The user password ')
-        })
-
-
 class CollectionsDto:
     api = Namespace('collections', description='collection related operations')
     collection = api.model(
@@ -64,7 +39,7 @@ class CollectionsDto:
                                                                                               description='temporal extent',
                                                                                               example=[
                                                                                                   '2021-05-05T00:00:00Z/2022-05-05T00:00:00Z'
-                                                                                                  ])}), required=True,
+                                                                                              ])}), required=True,
                                                            description='spatial and temporal extent'
                                                            ),
                                })
@@ -234,5 +209,5 @@ class GdalInfoDto:
     api = Namespace('gdal_info', description='gdalinfo related operations')
     get_gdal_info = api.model('gdalinfo', {
         'file_url': fields.String(required=True, description='url of the file to get the stac info for',
-                                             example="https://ctpltstacstrgdev.blob.core.windows.net/stac-items/LC09_L2SP_202024_20220810_20220812_02_T1_SR_B4.tiff"),
+                                  example="https://ctpltstacstrgdev.blob.core.windows.net/stac-items/LC09_L2SP_202024_20220810_20220812_02_T1_SR_B4.tiff"),
     })
