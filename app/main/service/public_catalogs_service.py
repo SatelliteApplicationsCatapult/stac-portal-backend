@@ -74,10 +74,9 @@ def _store_publicly_available_catalogs(catalogs: List[Dict[any, any]]):
     return [results.get() for results in workers if results.get() is not None]
 
 
-def get_all_available_collections_from_public_catalog_via_id(catalog_id: int) -> List[Dict[any, any]] or None:
+def get_all_available_collections_from_public_catalog_via_id(public_catalogue_entry: PublicCatalog) -> List[Dict[any, any]] or None:
     """Get all collections from a catalog specified by its id."""
-    public_catalogue_entry: PublicCatalog = PublicCatalog.query.filter_by(
-        id=catalog_id).first()
+    print("Doing catalog: " + public_catalogue_entry.name)
     try:
         if public_catalogue_entry is None:
             return None
@@ -96,10 +95,10 @@ def get_all_available_collections_from_public_catalog_via_id(catalog_id: int) ->
 def get_all_available_collections_from_all_public_catalogs() -> List[List[Dict[any, any]]]:
     """Get all collections from all public catalogs."""
     workers = []
-    public_catalogs = get_all_stored_public_catalogs()
+    public_catalogs: [PublicCatalog] = PublicCatalog.query.all()
     pool = multiprocessing.Pool(len(public_catalogs))
     for public_catalog in public_catalogs:
-        work = pool.apply_async(get_all_available_collections_from_public_catalog_via_id, args=(public_catalog['id'],))
+        work = pool.apply_async(get_all_available_collections_from_public_catalog_via_id, args=(public_catalog,))
         workers.append(work)
     [results.wait() for results in workers]
     return [results.get() for results in workers if results.get() is not None]
