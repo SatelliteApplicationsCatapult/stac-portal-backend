@@ -15,7 +15,7 @@ class PublicCatalogs(Resource):
     @api.doc('List all public catalogs in the database')
     @api.response(200, 'Success')
     def get(self):
-        return public_catalogs_service.get_all_stored_public_catalogs()
+        return public_catalogs_service.get_all_stored_public_catalogs_as_list_of_dict()
 
     @api.doc(description='Store a new public catalog in the database')
     @api.expect(PublicCatalogsDto.add_public_catalog, validate=True)
@@ -55,7 +55,7 @@ class PublicCatalogsCollections(Resource):
     @api.response(404, 'Not Found - Catalog does not exist')
     def get(self, public_catalog_id):
         try:
-            return public_catalogs_service.get_all_available_collections_from_public_catalog_via_id(
+            return public_catalogs_service.get_all_available_collections_from_public_catalog_via_catalog_id(
                 public_catalog_id), 200
         except CatalogDoesNotExistError as e:
             return {
@@ -77,7 +77,7 @@ class PublicCatalogsViaId(Resource):
     @api.response(404, 'Public catalog not found')
     def get(self, public_catalog_id):
         try:
-            return public_catalogs_service.get_public_catalog_by_id(
+            return public_catalogs_service.get_public_catalog_by_id_as_dict(
                 public_catalog_id)
 
         except CatalogDoesNotExistError:
@@ -88,7 +88,7 @@ class PublicCatalogsViaId(Resource):
     @api.response(404, 'Public catalog not found so it cant be removed')
     def delete(self, public_catalog_id):
         try:
-            return public_catalogs_service.remove_public_catalog_by_id(
+            return public_catalogs_service.remove_public_catalog_via_catalog_id(
                 public_catalog_id)
         except CatalogDoesNotExistError as e:
             return {'message': 'No result found'}, 404

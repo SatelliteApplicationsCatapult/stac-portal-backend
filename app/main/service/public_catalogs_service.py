@@ -74,7 +74,7 @@ def _store_publicly_available_catalogs(catalogs: List[Dict[any, any]]):
     return [results.get() for results in workers if results.get() is not None]
 
 
-def get_all_available_collections_from_public_catalog_via_id(public_catalog_id: int) -> List[Dict[any, any]]:
+def get_all_available_collections_from_public_catalog_via_catalog_id(public_catalog_id: int) -> List[Dict[any, any]]:
     """Get all collections from a catalog specified by its id."""
     try:
         a: PublicCatalog = PublicCatalog.query.filter_by(
@@ -109,7 +109,7 @@ def get_all_available_collections_from_all_public_catalogs() -> List[List[Dict[a
     public_catalogs: [PublicCatalog] = PublicCatalog.query.all()
     pool = multiprocessing.Pool(len(public_catalogs))
     for public_catalog in public_catalogs:
-        work = pool.apply_async(get_all_available_collections_from_public_catalog_via_id, args=(public_catalog,))
+        work = pool.apply_async(get_all_available_collections_from_public_catalog_via_catalog_id, args=(public_catalog,))
         workers.append(work)
     [results.wait() for results in workers]
     return [results.get() for results in workers if results.get() is not None]
@@ -119,7 +119,7 @@ def get_all_available_collections_from_all_public_catalogs_filter_via_polygon(po
     pass
 
 
-def get_all_stored_public_catalogs() -> List[Dict[any, any]]:
+def get_all_stored_public_catalogs_as_list_of_dict() -> List[Dict[any, any]]:
     """Get all public catalogs from the database.
 
     :return: List of all public catalogs as list of dicts
@@ -128,7 +128,7 @@ def get_all_stored_public_catalogs() -> List[Dict[any, any]]:
     return [i.as_dict() for i in a]
 
 
-def get_public_catalog_by_id(public_catalog_id: int) -> Dict[any, any]:
+def get_public_catalog_by_id_as_dict(public_catalog_id: int) -> Dict[any, any]:
     """Get a public catalog by its id.
 
     :param public_catalog_id: Id of the public catalog
@@ -142,7 +142,7 @@ def get_public_catalog_by_id(public_catalog_id: int) -> Dict[any, any]:
         raise CatalogDoesNotExistError
 
 
-def remove_public_catalog_by_id(public_catalog_id: int) -> Dict[any, any]:
+def remove_public_catalog_via_catalog_id(public_catalog_id: int) -> Dict[any, any]:
     """Remove a public catalog by its id.
 
     :param public_catalog_id: Id of the public catalog
