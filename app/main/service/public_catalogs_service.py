@@ -6,7 +6,7 @@ from typing import Dict, List
 import requests
 import sqlalchemy
 from flask import current_app
-from urllib.parse import urljoin
+
 from app.main.model.public_catalogs_model import PublicCatalog
 from .status_reporting_service import make_stac_ingestion_status_entry, set_stac_ingestion_status_entry
 from .. import db
@@ -47,6 +47,11 @@ def get_publicly_available_catalogs() -> List[Dict[any, any]]:
 
 def _store_catalogs(title, url, summary):
     try:
+        url_removed_slash = url[:-1] if url.endswith('/') else url
+        response = requests.get(url_removed_slash + '/collections')
+        # if response is not 200, skip this catalog
+        if response.status_code != 200:
+            return None
         return store_new_public_catalog(title, url, summary)
     except CatalogAlreadyExistsError:
         pass
@@ -69,21 +74,35 @@ def _store_publicly_available_catalogs(catalogs: List[Dict[any, any]]):
     return [results.get() for results in workers if results.get() is not None]
 
 
-def get_all_available_collections_from_public_catalog_via_id(catalog_id: int) -> List[Dict[any, any]]:
+def get_all_available_collections_from_public_catalog_via_id(catalog_id: int) -> List[Dict[any, any]] or None:
     """Get all collections from a catalog specified by its id."""
     public_catalogue_entry: PublicCatalog = PublicCatalog.query.filter_by(
         id=catalog_id).first()
-    if public_catalogue_entry is None:
-        raise CatalogDoesNotExistError
-    url = public_catalogue_entry.url
-    collections_url = urljoin(url, "collections")
-    response = requests.get(collections_url)
-    response_result = response.json()
-    return response_result['collections']
+    try:
+        if public_catalogue_entry is None:
+            return None
+        url = public_catalogue_entry.url
+        # if url ends with /, remove it
+        if url.endswith('/'):
+            url = url[:-1]
+        collections_url = url + '/collections'
+        response = requests.get(collections_url)
+        response_result = response.json()
+        return response_result['collections']
+    except:
+        print("Url of problem catalog: " + public_catalogue_entry.url)
 
 
-def get_all_available_collections_from_all_public_catalogs() -> List[str]:
-    pass
+def get_all_available_collections_from_all_public_catalogs() -> List[List[Dict[any, any]]]:
+    """Get all collections from all public catalogs."""
+    workers = []
+    public_catalogs = get_all_stored_public_catalogs()
+    pool = multiprocessing.Pool(len(public_catalogs))
+    for public_catalog in public_catalogs:
+        work = pool.apply_async(get_all_available_collections_from_public_catalog_via_id, args=(public_catalog['id'],))
+        workers.append(work)
+    [results.wait() for results in workers]
+    return [results.get() for results in workers if results.get() is not None]
 
 
 def get_all_available_collections_from_all_public_catalogs_filter_via_polygon(polygons) -> List[str]:
