@@ -16,7 +16,7 @@ class PublicCatalogs(Resource):
     @api.doc('List all public catalogs in the database')
     @api.response(200, 'Success')
     def get(self):
-        return public_catalogs_service.get_all_public_catalogs()
+        return public_catalogs_service.get_all_stored_public_catalogs()
 
     @api.doc(description='Store a new public catalog in the database')
     @api.expect(PublicCatalogsDto.add_public_catalog, validate=True)
@@ -76,7 +76,7 @@ class GetStacRecordsSpecifyingPublicCatalogId(Resource):
     def post(self, public_catalog_id):
         data = request.json
         try:
-            return public_catalogs_service.get_specific_collections_via_catalog_id(
+            return public_catalogs_service.load_get_specific_collections_via_catalog_id(
                 public_catalog_id, data), 200
         except CatalogDoesNotExistError as e:
             return {'message': 'Public catalog not found'}, 404

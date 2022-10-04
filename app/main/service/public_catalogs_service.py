@@ -36,7 +36,24 @@ def store_new_public_catalog(name: str, url: str, description: str,
         raise CatalogAlreadyExistsError
 
 
-def get_all_public_catalogs() -> List[Dict[any, any]]:
+def get_publicly_available_catalogs():
+    # for every public catalog, run store_new_public_catalog
+    pass
+
+
+def get_all_available_collections_from_public_catalog_via_id(catalog_id: int) -> List[str]:
+    pass
+
+
+def get_all_available_collections_from_all_public_catalogs() -> List[str]:
+    pass
+
+
+def get_all_available_collections_from_all_public_catalogs_filter_via_polygon(polygons: List[List[List[float]]]) -> List[str]:
+    pass
+
+
+def get_all_stored_public_catalogs() -> List[Dict[any, any]]:
     """Get all public catalogs from the database.
 
     :return: List of all public catalogs as list of dicts
@@ -75,8 +92,8 @@ def remove_public_catalog_by_id(public_catalog_id: int) -> Dict[any, any]:
         raise CatalogDoesNotExistError
 
 
-def get_specific_collections_via_catalog_id(catalog_id: int,
-                                            parameters: Dict[any, any] = None):
+def load_get_specific_collections_via_catalog_id(catalog_id: int,
+                                                 parameters: Dict[any, any] = None):
     """Get all collections from a catalog specified by its id.
 
     The search query will be added to the database so the inserted records
@@ -164,7 +181,7 @@ def _call_ingestion_microservice(parameters) -> int:
     parameters['callback_id'] = callback_id
     microservice_endpoint = current_app.config['STAC_SELECTIVE_INGESTER_ENDPOINT']
 
-    def run_async(_parameters,_app):
+    def run_async(_parameters, _app):
         try:
             print("Microservice endpoint: " + microservice_endpoint)
             response = requests.post(
@@ -180,16 +197,19 @@ def _call_ingestion_microservice(parameters) -> int:
             updated_items_count = response_json['updated_items_count']
             already_stored_items_count = response_json['already_stored_items_count']
             with _app.app_context():
-                set_stac_ingestion_status_entry(int(callback_id), newly_stored_collections_count, newly_stored_collections,
-                                                updated_collections_count, updated_collections, newly_stored_items_count,
+                set_stac_ingestion_status_entry(int(callback_id), newly_stored_collections_count,
+                                                newly_stored_collections,
+                                                updated_collections_count, updated_collections,
+                                                newly_stored_items_count,
                                                 updated_items_count, already_stored_items_count)
             return response_json
 
         except Exception as e:
             print("Error: " + str(e))
             raise ConnectionError("Could not connect to stac selective ingester microservice")
-    app = current_app._get_current_object() # TODO: Is there a better way to do this?
-    thread = Thread(target=run_async, args=(parameters,app))
+
+    app = current_app._get_current_object()  # TODO: Is there a better way to do this?
+    thread = Thread(target=run_async, args=(parameters, app))
     thread.start()
     return callback_id
 
