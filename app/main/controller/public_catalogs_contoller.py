@@ -48,6 +48,27 @@ class PublicCatalogsUpdate(Resource):
         return public_catalogs_service.get_publicly_available_catalogs(), 200
 
 
+@api.route("/<int:public_catalog_id>/collections")
+class PublicCatalogsCollections(Resource):
+    @api.doc(description='Get all collections of a public catalog')
+    @api.response(200, 'Success')
+    @api.response(404, 'Not Found - Catalog does not exist')
+    def get(self, public_catalog_id):
+        try:
+            return public_catalogs_service.get_all_available_collections_from_public_catalog_via_id(
+                public_catalog_id), 200
+        except CatalogDoesNotExistError as e:
+            return {
+                       'message': 'Catalog with this id does not exist',
+                   }, 404
+
+@api.route("/collections")
+class PublicCatalogsCollections(Resource):
+    @api.doc(description='Get all collections of all public catalogs')
+    @api.response(200, 'Success')
+    def get(self):
+        return public_catalogs_service.get_all_available_collections_from_all_public_catalogs(), 200
+
 @api.route('/<int:public_catalog_id>')
 class PublicCatalogsViaId(Resource):
 
@@ -73,7 +94,7 @@ class PublicCatalogsViaId(Resource):
             return {'message': 'No result found'}, 404
 
 
-@api.route('/<int:public_catalog_id>/records/get')
+@api.route('/<int:public_catalog_id>/items/get')
 class GetStacRecordsSpecifyingPublicCatalogId(Resource):
 
     @api.doc(description="""Get specific collections from catalog.""")
@@ -93,7 +114,7 @@ class GetStacRecordsSpecifyingPublicCatalogId(Resource):
                    }, 500
 
 
-@api.route('/records/update')
+@api.route('/items/update')
 class UpdateAllStacRecords(Resource):
 
     @api.doc(
@@ -115,7 +136,7 @@ class UpdateAllStacRecords(Resource):
                    }, 500
 
 
-@api.route('/<int:public_catalog_id>/records/update')
+@api.route('/<int:public_catalog_id>/items/update')
 class UpdateStacRecordsSpecifyingPublicCatalogId(Resource):
 
     @api.doc(description="""Get all stac records from a public catalog.""")
