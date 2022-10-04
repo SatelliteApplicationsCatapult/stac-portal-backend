@@ -74,7 +74,18 @@ def _store_publicly_available_catalogs(catalogs: List[Dict[any, any]]):
     return [results.get() for results in workers if results.get() is not None]
 
 
-def get_all_available_collections_from_public_catalog_via_id(public_catalogue_entry: PublicCatalog) -> List[Dict[any, any]] or None:
+def get_all_available_collections_from_public_catalog_via_id(public_catalog_id: int) -> List[Dict[any, any]]:
+    """Get all collections from a catalog specified by its id."""
+    try:
+        a: PublicCatalog = PublicCatalog.query.filter_by(
+            id=public_catalog_id).first()
+        return get_all_available_collections_from_public_catalog(a)
+    except AttributeError:
+        raise CatalogDoesNotExistError
+
+
+def get_all_available_collections_from_public_catalog(public_catalogue_entry: PublicCatalog) -> List[Dict[
+    any, any]] or None:
     """Get all collections from a catalog specified by its id."""
     print("Doing catalog: " + public_catalogue_entry.name)
     try:
