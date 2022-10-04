@@ -9,7 +9,6 @@ class PublicCatalog(db.Model):
     name: str = db.Column(db.Text, nullable=False)
     url: str = db.Column(db.Text, nullable=False, unique=True)
     description: str = db.Column(db.Text, nullable=True)
-    stac_version: str = db.Column(db.Text, nullable=True)
     added_on: datetime.datetime = db.Column(db.DateTime,
                                             nullable=False,
                                             default=datetime.datetime.utcnow)
