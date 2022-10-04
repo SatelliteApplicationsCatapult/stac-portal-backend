@@ -13,8 +13,7 @@ class DevelopmentConfig(Config):
     # here are variables available only for development environment
     DEBUG = True
     ENV = "Dev"
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(
-        basedir, 'flask_boilerplate_main.db')
+    SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI", "postgresql://postgres:postgres@localhost:5432/postgres")
     TARGET_STAC_API_SERVER = os.getenv('TARGET_STAC_API_SERVER', "http://localhost:8082")
     STAC_VALIDATOR_ENDPOINT = os.getenv('STAC_VALIDATOR_ENDPOINT', "http://localhost:7000")
     STAC_SELECTIVE_INGESTER_ENDPOINT = os.getenv('STAC_SELECTIVE_INGESTER_ENDPOINT', "http://localhost:7001")
