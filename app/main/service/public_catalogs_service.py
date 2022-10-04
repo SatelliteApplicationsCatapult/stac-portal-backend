@@ -109,7 +109,7 @@ def get_all_available_collections_from_all_public_catalogs() -> List[List[Dict[a
     public_catalogs: [PublicCatalog] = PublicCatalog.query.all()
     pool = multiprocessing.Pool(len(public_catalogs))
     for public_catalog in public_catalogs:
-        work = pool.apply_async(get_all_available_collections_from_public_catalog_via_catalog_id, args=(public_catalog,))
+        work = pool.apply_async(get_all_available_collections_from_public_catalog, args=(public_catalog,))
         workers.append(work)
     [results.wait() for results in workers]
     return [results.get() for results in workers if results.get() is not None]
