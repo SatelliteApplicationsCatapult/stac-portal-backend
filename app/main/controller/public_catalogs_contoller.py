@@ -1,10 +1,9 @@
-import sqlalchemy
 from flask import request
 from flask_restx import Resource
 
+from ..custom_exceptions import *
 from ..service import public_catalogs_service
 from ..util.dto import PublicCatalogsDto
-from ..custom_exceptions import *
 
 api = PublicCatalogsDto.api
 
@@ -29,9 +28,8 @@ class PublicCatalogs(Resource):
             name = data['name']
             url = data['url']
             description = data['description']
-            stac_version = data['stac_version']
             return public_catalogs_service.store_new_public_catalog(
-                name, url, description, stac_version), 201
+                name, url, description), 201
         except IndexError as e:
             return {
                        'message': 'Some elements in json body are not present',
@@ -40,6 +38,14 @@ class PublicCatalogs(Resource):
             return {
                        'message': 'Catalog with this url already exists',
                    }, 409
+
+
+@api.route('/sync')
+class PublicCatalogsUpdate(Resource):
+    @api.doc(description='Get all public catalogs and update them')
+    @api.response(200, 'Success')
+    def get(self):
+        return public_catalogs_service.get_publicly_available_catalogs(), 200
 
 
 @api.route('/<int:public_catalog_id>')
@@ -51,7 +57,7 @@ class PublicCatalogsViaId(Resource):
     def get(self, public_catalog_id):
         try:
             return public_catalogs_service.get_public_catalog_by_id(
-            public_catalog_id)
+                public_catalog_id)
 
         except CatalogDoesNotExistError:
             return {'message': 'Public catalog not found'}, 404

@@ -1,11 +1,12 @@
 import json
+import multiprocessing
 from threading import Thread
 from typing import Dict, List
 
 import requests
 import sqlalchemy
 from flask import current_app
-
+from urllib.parse import urljoin
 from app.main.model.public_catalogs_model import PublicCatalog
 from .status_reporting_service import make_stac_ingestion_status_entry, set_stac_ingestion_status_entry
 from .. import db
@@ -13,8 +14,7 @@ from ..custom_exceptions import *
 from ..model.public_catalogs_model import StoredSearchParameters
 
 
-def store_new_public_catalog(name: str, url: str, description: str,
-                             stac_version: str) -> Dict[any, any]:
+def store_new_public_catalog(name: str, url: str, description: str) -> Dict[any, any]:
     """Store a new public catalog in the database.
 
     :param name: Name of the catalog
@@ -28,28 +28,65 @@ def store_new_public_catalog(name: str, url: str, description: str,
         a.name = name
         a.url = url
         a.description = description
-        a.stac_version = stac_version
         db.session.add(a)
         db.session.commit()
         return a.as_dict()
     except sqlalchemy.exc.IntegrityError:
+        # rollback the session
+        db.session.rollback()
         raise CatalogAlreadyExistsError
 
 
-def get_publicly_available_catalogs():
-    # for every public catalog, run store_new_public_catalog
-    pass
+def get_publicly_available_catalogs() -> List[Dict[any, any]]:
+    lookup_api: str = "https://stacindex.org/api/catalogs"
+    response = requests.get(lookup_api)
+    response_result = response.json()
+    filtered_response_result = [i for i in response_result if i['isPrivate'] == False and i['isApi'] == True]
+    return _store_publicly_available_catalogs(filtered_response_result)
 
 
-def get_all_available_collections_from_public_catalog_via_id(catalog_id: int) -> List[str]:
-    pass
+def _store_catalogs(title, url, summary):
+    try:
+        return store_new_public_catalog(title, url, summary)
+    except CatalogAlreadyExistsError:
+        pass
+    return None
+
+
+def _store_publicly_available_catalogs(catalogs: List[Dict[any, any]]):
+    """Store all publicly available catalogs in the database.
+
+    :param catalogs: List of catalogs as dicts
+    """
+    pool = multiprocessing.Pool(8)
+    workers = []
+
+    for catalog in catalogs:
+        work = pool.apply_async(_store_catalogs, args=(
+            catalog['title'], catalog['url'], catalog['summary']))
+        workers.append(work)
+    [results.wait() for results in workers]
+    return [results.get() for results in workers if results.get() is not None]
+
+
+def get_all_available_collections_from_public_catalog_via_id(catalog_id: int) -> List[Dict[any, any]]:
+    """Get all collections from a catalog specified by its id."""
+    public_catalogue_entry: PublicCatalog = PublicCatalog.query.filter_by(
+        id=catalog_id).first()
+    if public_catalogue_entry is None:
+        raise CatalogDoesNotExistError
+    url = public_catalogue_entry.url
+    collections_url = urljoin(url, "collections")
+    response = requests.get(collections_url)
+    response_result = response.json()
+    return response_result['collections']
 
 
 def get_all_available_collections_from_all_public_catalogs() -> List[str]:
     pass
 
 
-def get_all_available_collections_from_all_public_catalogs_filter_via_polygon(polygons: List[List[List[float]]]) -> List[str]:
+def get_all_available_collections_from_all_public_catalogs_filter_via_polygon(polygons) -> List[str]:
     pass
 
 
