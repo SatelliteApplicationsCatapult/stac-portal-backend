@@ -1,5 +1,7 @@
 import datetime
 
+from geoalchemy2 import Geometry
+
 from .. import db
 
 
@@ -16,6 +18,8 @@ class PublicCatalog(db.Model):
                                                cascade="all, delete-orphan")
     stored_ingestion_statuses = db.relationship("StacIngestionStatus", backref="public_catalogs", lazy="dynamic",
                                                 cascade="all, delete-orphan")
+    collections = db.relationship("PublicCollection", backref="public_catalogs", lazy="dynamic",
+                                  cascade="all, delete-orphan")
 
     def get_number_of_stored_search_parameters(self):
         return StoredSearchParameters.query.filter_by(
@@ -31,6 +35,19 @@ class PublicCatalog(db.Model):
             "number_of_stored_search_parameters_associated"] = self.get_number_of_stored_search_parameters(
         )
         return data
+
+
+class PublicCollection(db.Model):
+    __tablename__ = "public_collections"
+    _id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Text, nullable=False)
+    type = db.Column(db.Text, nullable=False, default="Collection")
+    title = db.Column(db.Text, nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    temporal_extent_start = db.Column(db.DateTime, nullable=True, default=None)
+    temporal_extent_end = db.Column(db.DateTime, nullable=True, default=None)
+    spatial_extent = db.Column(Geometry(geometry_type="POLYGON"), nullable=True, default=None)
+    parent_catalog = db.Column(db.Integer, db.ForeignKey("public_catalogs.id"), nullable=False)
 
 
 class StoredSearchParameters(db.Model):

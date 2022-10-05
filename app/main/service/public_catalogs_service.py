@@ -1,13 +1,15 @@
+import datetime
 import json
-import multiprocessing
 from threading import Thread
 from typing import Dict, List
 
+import geoalchemy2
 import requests
 import sqlalchemy
 from flask import current_app
+from shapely.geometry import box
 
-from app.main.model.public_catalogs_model import PublicCatalog
+from app.main.model.public_catalogs_model import PublicCatalog, PublicCollection
 from .status_reporting_service import make_stac_ingestion_status_entry, set_stac_ingestion_status_entry
 from .. import db
 from ..custom_exceptions import *
@@ -47,14 +49,52 @@ def get_publicly_available_catalogs() -> List[Dict[any, any]]:
 
 def _store_catalogs(title, url, summary):
     try:
+        new_catalog = store_new_public_catalog(title, url, summary)
         url_removed_slash = url[:-1] if url.endswith('/') else url
         response = requests.get(url_removed_slash + '/collections')
         # if response is not 200, skip this catalog
         if response.status_code != 200:
             return None
-        return store_new_public_catalog(title, url, summary)
+        new_catalog_id = new_catalog['id']
+        collections_for_new_catalog: List[Dict[any,any]] = get_all_available_collections_from_public_catalog_via_catalog_id(new_catalog_id)
+        # for each new collection, store it in the database
+        for collection in collections_for_new_catalog:
+            public_collection: PublicCollection = PublicCollection()
+            public_collection.id = collection['id']
+            try:
+                public_collection.type = collection['type']
+            except KeyError:
+                public_collection.type = "Collection"
+            public_collection.title = collection['title']
+            public_collection.description = collection['description']
+            start_time_string = collection['extent']['temporal']['interval'][0][0]
+            end_time_string = collection['extent']['temporal']['interval'][0][1]
+            # convert RFC3339 to datetime
+            if start_time_string is not None:
+                try:
+                    public_collection.temporal_extent_start = datetime.datetime.strptime(start_time_string,'%Y-%m-%dT%H:%M:%S%z')
+                except:
+                    public_collection.temporal_extent_start = datetime.datetime.strptime(start_time_string,'%Y-%m-%dT%H:%M:%S.%f%z')
+            if end_time_string is not None:
+                try:
+                    public_collection.temporal_extent_end = datetime.datetime.strptime(end_time_string,'%Y-%m-%dT%H:%M:%S%z')
+                except:
+                    public_collection.temporal_extent_end = datetime.datetime.strptime(end_time_string,'%Y-%m-%dT%H:%M:%S.%f%z')
+            shapely_box = box(*(collection['extent']['spatial']['bbox'][0]))
+            public_collection.spatial_extent = geoalchemy2.shape.from_shape(shapely_box, srid=4326)
+            public_collection.parent_catalog = new_catalog_id  # TODO: Rename to parent_catalog_id
+            db.session.add(public_collection)
+            db.session.commit()
+        return new_catalog
     except CatalogAlreadyExistsError:
         pass
+    except (KeyError) as e:
+        # print the error
+        print("Url of problem catalog: " + url)
+        print(e)
+        # remove new_catalog from database via url
+        db.session.query(PublicCatalog).filter_by(url=url).delete()
+        db.session.commit()
     return None
 
 
@@ -63,15 +103,11 @@ def _store_publicly_available_catalogs(catalogs: List[Dict[any, any]]):
 
     :param catalogs: List of catalogs as dicts
     """
-    pool = multiprocessing.Pool(8)
-    workers = []
-
+    results = []
     for catalog in catalogs:
-        work = pool.apply_async(_store_catalogs, args=(
-            catalog['title'], catalog['url'], catalog['summary']))
-        workers.append(work)
-    [results.wait() for results in workers]
-    return [results.get() for results in workers if results.get() is not None]
+        results.append((_store_catalogs(
+            catalog['title'], catalog['url'], catalog['summary'])))
+    return [i for i in results if i is not None]
 
 
 def get_all_available_collections_from_public_catalog_via_catalog_id(public_catalog_id: int) -> List[Dict[any, any]]:
@@ -105,14 +141,12 @@ def get_all_available_collections_from_public_catalog(public_catalogue_entry: Pu
 
 def get_all_available_collections_from_all_public_catalogs() -> List[List[Dict[any, any]]]:
     """Get all collections from all public catalogs."""
-    workers = []
+    data = []
     public_catalogs: [PublicCatalog] = PublicCatalog.query.all()
-    pool = multiprocessing.Pool(len(public_catalogs))
     for public_catalog in public_catalogs:
-        work = pool.apply_async(get_all_available_collections_from_public_catalog, args=(public_catalog,))
-        workers.append(work)
-    [results.wait() for results in workers]
-    return [results.get() for results in workers if results.get() is not None]
+        data.append = ((get_all_available_collections_from_public_catalog(public_catalog)))
+    # return data where not None
+    return [i for i in data if i is not None]
 
 
 def get_all_available_collections_from_all_public_catalogs_filter_via_polygon(polygons) -> List[str]:
