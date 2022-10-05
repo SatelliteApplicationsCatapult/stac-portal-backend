@@ -69,17 +69,27 @@ def _store_catalogs(title, url, summary):
             public_collection.description = collection['description']
             start_time_string = collection['extent']['temporal']['interval'][0][0]
             end_time_string = collection['extent']['temporal']['interval'][0][1]
-            # convert RFC3339 to datetime
+            POTENTIAL_DATETIME_FORMATS = ['%Y-%m-%dT%H:%M:%S%z','%Y-%m-%dT%H:%M:%S.%f%z','%Y-%m-%dT%H:%M:%S.%f']
             if start_time_string is not None:
-                try:
-                    public_collection.temporal_extent_start = datetime.datetime.strptime(start_time_string,'%Y-%m-%dT%H:%M:%S%z')
-                except:
-                    public_collection.temporal_extent_start = datetime.datetime.strptime(start_time_string,'%Y-%m-%dT%H:%M:%S.%f%z')
+                public_collection.start_time = None
+                for fmt in POTENTIAL_DATETIME_FORMATS:
+                    try:
+                        public_collection.start_time = datetime.datetime.strptime(start_time_string, fmt)
+                        break
+                    except ValueError:
+                        continue
+                if public_collection.start_time is None:
+                    raise ConvertingTimestampError
             if end_time_string is not None:
-                try:
-                    public_collection.temporal_extent_end = datetime.datetime.strptime(end_time_string,'%Y-%m-%dT%H:%M:%S%z')
-                except:
-                    public_collection.temporal_extent_end = datetime.datetime.strptime(end_time_string,'%Y-%m-%dT%H:%M:%S.%f%z')
+                public_collection.end_time = None
+                for fmt in POTENTIAL_DATETIME_FORMATS:
+                    try:
+                        public_collection.end_time = datetime.datetime.strptime(end_time_string, fmt)
+                        break
+                    except ValueError:
+                        continue
+                if public_collection.end_time is None:
+                    raise ConvertingTimestampError
             shapely_box = box(*(collection['extent']['spatial']['bbox'][0]))
             public_collection.spatial_extent = geoalchemy2.shape.from_shape(shapely_box, srid=4326)
             public_collection.parent_catalog = new_catalog_id  # TODO: Rename to parent_catalog_id
@@ -88,6 +98,8 @@ def _store_catalogs(title, url, summary):
         return new_catalog
     except CatalogAlreadyExistsError:
         pass
+    except ConvertingTimestampError:
+        print("Could not convert timestamp")
     except (KeyError) as e:
         # print the error
         print("Url of problem catalog: " + url)

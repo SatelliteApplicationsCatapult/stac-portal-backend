@@ -11,3 +11,6 @@ class CatalogAlreadyExistsError(Error):
 
 class MicroserviceIsNotAvailableError(Error):
     pass
+
+class ConvertingTimestampError(Error):
+    pass
