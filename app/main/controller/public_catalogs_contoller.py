@@ -42,7 +42,7 @@ class PublicCatalogs(Resource):
     @api.doc(description='Delete all public catalogs from the database')
     @api.response(200, 'Success')
     def delete(self):
-        public_catalogs_service.remove_all_catalogs()
+        public_catalogs_service.remove_all_public_catalogs()
         return {"message": "Deleted all catalogs"}, 200
 
 
@@ -54,27 +54,27 @@ class PublicCatalogsUpdate(Resource):
         return public_catalogs_service.store_publicly_available_catalogs(), 200
 
 
-@api.route("/<int:public_catalog_id>/collections")
-class PublicCatalogsCollections(Resource):
-    @api.doc(description='Get all collections of a public catalog')
-    @api.response(200, 'Success')
-    @api.response(404, 'Not Found - Catalog does not exist')
-    def get(self, public_catalog_id):
-        try:
-            return public_catalogs_service.get_all_available_collections_from_public_catalog_via_catalog_id(
-                public_catalog_id), 200
-        except CatalogDoesNotExistError as e:
-            return {
-                       'message': 'Catalog with this id does not exist',
-                   }, 404
+# @api.route("/<int:public_catalog_id>/collections")
+# class PublicCatalogsCollections(Resource):
+#     @api.doc(description='Get all collections of a public catalog')
+#     @api.response(200, 'Success')
+#     @api.response(404, 'Not Found - Catalog does not exist')
+#     def get(self, public_catalog_id):
+#         try:
+#             return public_catalogs_service.get_all_available_collections_from_public_catalog_via_catalog_id(
+#                 public_catalog_id), 200
+#         except CatalogDoesNotExistError as e:
+#             return {
+#                        'message': 'Catalog with this id does not exist',
+#                    }, 404
 
 
-@api.route("/collections")
-class PublicCatalogsCollections(Resource):
-    @api.doc(description='Get all collections of all public catalogs')
-    @api.response(200, 'Success')
-    def get(self):
-        return public_catalogs_service.get_all_available_collections_from_all_public_catalogs(), 200
+# @api.route("/collections")
+# class PublicCatalogsCollections(Resource):
+#     @api.doc(description='Get all collections of all public catalogs')
+#     @api.response(200, 'Success')
+#     def get(self):
+#         return public_catalogs_service.get_all_available_collections_from_all_public_catalogs(), 200
 
 
 @api.route('/<int:public_catalog_id>')
@@ -111,7 +111,7 @@ class GetStacRecordsSpecifyingPublicCatalogId(Resource):
     def post(self, public_catalog_id):
         data = request.json
         try:
-            return public_catalogs_service.load_get_specific_collections_via_catalog_id(
+            return public_catalogs_service.load_specific_collections_via_catalog_id(
                 public_catalog_id, data), 200
         except CatalogDoesNotExistError as e:
             return {'message': 'Public catalog not found'}, 404
@@ -133,8 +133,7 @@ class UpdateAllStacRecords(Resource):
             response = []
             for i in result:
                 response.append({
-                    "message": i[0],
-                    "callback_id": i[1],
+                    "operation_number": i,
                 })
             return response, 200
         except ConnectionError as e:
