@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple
 
 import geoalchemy2
 import requests
+import shapely
 import sqlalchemy
 from flask import current_app
 from shapely.geometry import MultiPolygon
@@ -158,7 +159,7 @@ def _store_collections(public_catalog_entry: PublicCatalog) -> int:
             for i in range(0, len(bboxes)):
                 shapely_box = box(*(collection['extent']['spatial']['bbox'][i]))
                 shapely_boxes.append(shapely_box)
-            shapely_multi_polygon = geoalchemy2.shape.from_shape(MultiPolygon(shapely_boxes))
+            shapely_multi_polygon = geoalchemy2.shape.from_shape(MultiPolygon(shapely_boxes), srid=4326)
             public_collection.spatial_extent = shapely_multi_polygon
             public_collection.parent_catalog = public_catalog_entry.id  # TODO: Rename to parent_catalog_id
             db.session.add(public_collection)
@@ -192,6 +193,12 @@ def _store_catalog_and_collections(title, url, summary) -> int or None:
     except CatalogAlreadyExistsError:
         already_existing_catalog: PublicCatalog = PublicCatalog.query.filter_by(url=url).first()
         return _store_collections(already_existing_catalog)
+
+
+def find_all_collections(bbox: shapely.geometry.polygon.Polygon):
+    a = db.session.query(PublicCollection).filter(PublicCollection.spatial_extent.ST_Intersects(
+        f"SRID=4326;{bbox.wkt}")).all()
+    return a
 
 
 def _get_all_available_collections_from_public_catalog(public_catalogue_entry: PublicCatalog) -> List[Dict[
