@@ -5,7 +5,7 @@ from werkzeug.datastructures import FileStorage
 
 
 class CollectionsDto:
-    api = Namespace("collections", description="collection related operations")
+    api = Namespace("private_catalog", description="private catalog related operations")
     collection = api.model(
         "collections",
         {
@@ -308,3 +308,7 @@ class GdalInfoDto:
             ),
         },
     )
+
+
+class StacDto:
+    api = Namespace("stac", description="stac related operations")
