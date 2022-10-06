@@ -48,6 +48,7 @@ class PublicCollection(db.Model):
     temporal_extent_end = db.Column(db.DateTime, nullable=True, default=None)
     spatial_extent = db.Column(Geometry(geometry_type="MULTIPOLYGON"), nullable=True, default=None)
     parent_catalog = db.Column(db.Integer, db.ForeignKey("public_catalogs.id", ondelete='CASCADE'), nullable=False)
+    __table_args__ = (db.UniqueConstraint('id', 'parent_catalog', name='_id_parent_catalog_uc'),)
 
 
 class StoredSearchParameters(db.Model):

@@ -51,7 +51,7 @@ class PublicCatalogsUpdate(Resource):
     @api.doc(description='Get all public catalogs and update them')
     @api.response(200, 'Success')
     def get(self):
-        return public_catalogs_service.get_publicly_available_catalogs(), 200
+        return public_catalogs_service.store_publicly_available_catalogs(), 200
 
 
 @api.route("/<int:public_catalog_id>/collections")
@@ -68,12 +68,14 @@ class PublicCatalogsCollections(Resource):
                        'message': 'Catalog with this id does not exist',
                    }, 404
 
+
 @api.route("/collections")
 class PublicCatalogsCollections(Resource):
     @api.doc(description='Get all collections of all public catalogs')
     @api.response(200, 'Success')
     def get(self):
         return public_catalogs_service.get_all_available_collections_from_all_public_catalogs(), 200
+
 
 @api.route('/<int:public_catalog_id>')
 class PublicCatalogsViaId(Resource):
