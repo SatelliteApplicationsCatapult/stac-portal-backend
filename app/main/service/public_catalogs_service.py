@@ -8,6 +8,7 @@ import requests
 import sqlalchemy
 from flask import current_app
 from shapely.geometry import box
+from shapely.geometry import MultiPolygon, Polygon
 
 from app.main.model.public_catalogs_model import PublicCatalog, PublicCollection
 from .status_reporting_service import make_stac_ingestion_status_entry, set_stac_ingestion_status_entry
@@ -47,16 +48,31 @@ def get_publicly_available_catalogs() -> List[Dict[any, any]]:
     return _store_publicly_available_catalogs(filtered_response_result)
 
 
-def _store_catalogs(title, url, summary):
+def remove_all_catalogs():
+    """Remove all catalogs from the database."""
+    db.session.query(PublicCatalog).delete()
+    db.session.commit()
+
+
+def _store_catalog(title, url, summary):
     try:
-        new_catalog = store_new_public_catalog(title, url, summary)
         url_removed_slash = url[:-1] if url.endswith('/') else url
         response = requests.get(url_removed_slash + '/collections')
         # if response is not 200, skip this catalog
         if response.status_code != 200:
+            print("Skipping not-public catalog: " + title)
             return None
+        response_2 = requests.get(url_removed_slash + '/search?limit=1')
+        if response_2.status_code != 200:
+            print("Skipping not-public catalog: " + title)
+            return None
+        if len(response_2.json()['features']) != 1:
+            print("Skipping not-public catalog: " + title)
+            return None
+        new_catalog = store_new_public_catalog(title, url, summary)
         new_catalog_id = new_catalog['id']
-        collections_for_new_catalog: List[Dict[any,any]] = get_all_available_collections_from_public_catalog_via_catalog_id(new_catalog_id)
+        collections_for_new_catalog: List[
+            Dict[any, any]] = get_all_available_collections_from_public_catalog_via_catalog_id(new_catalog_id)
         # for each new collection, store it in the database
         for collection in collections_for_new_catalog:
             public_collection: PublicCollection = PublicCollection()
@@ -69,10 +85,10 @@ def _store_catalogs(title, url, summary):
             public_collection.description = collection['description']
             start_time_string = collection['extent']['temporal']['interval'][0][0]
             end_time_string = collection['extent']['temporal']['interval'][0][1]
-            POTENTIAL_DATETIME_FORMATS = ['%Y-%m-%dT%H:%M:%S%z','%Y-%m-%dT%H:%M:%S.%f%z','%Y-%m-%dT%H:%M:%S.%f']
+            potential_datetime_formats = ['%Y-%m-%dT%H:%M:%S%z', '%Y-%m-%dT%H:%M:%S.%f%z', '%Y-%m-%dT%H:%M:%S.%f']
             if start_time_string is not None:
                 public_collection.start_time = None
-                for fmt in POTENTIAL_DATETIME_FORMATS:
+                for fmt in potential_datetime_formats:
                     try:
                         public_collection.start_time = datetime.datetime.strptime(start_time_string, fmt)
                         break
@@ -82,7 +98,7 @@ def _store_catalogs(title, url, summary):
                     raise ConvertingTimestampError
             if end_time_string is not None:
                 public_collection.end_time = None
-                for fmt in POTENTIAL_DATETIME_FORMATS:
+                for fmt in potential_datetime_formats:
                     try:
                         public_collection.end_time = datetime.datetime.strptime(end_time_string, fmt)
                         break
@@ -90,8 +106,13 @@ def _store_catalogs(title, url, summary):
                         continue
                 if public_collection.end_time is None:
                     raise ConvertingTimestampError
-            shapely_box = box(*(collection['extent']['spatial']['bbox'][0]))
-            public_collection.spatial_extent = geoalchemy2.shape.from_shape(shapely_box, srid=4326)
+            bboxes = collection['extent']['spatial']['bbox']
+            shapely_boxes = []
+            for i in range(0, len(bboxes)):
+                shapely_box = box(*(collection['extent']['spatial']['bbox'][i]))
+                shapely_boxes.append(shapely_box)
+            shapely_multi_polygon = geoalchemy2.shape.from_shape(MultiPolygon(shapely_boxes))
+            public_collection.spatial_extent = shapely_multi_polygon
             public_collection.parent_catalog = new_catalog_id  # TODO: Rename to parent_catalog_id
             db.session.add(public_collection)
             db.session.commit()
@@ -117,7 +138,7 @@ def _store_publicly_available_catalogs(catalogs: List[Dict[any, any]]):
     """
     results = []
     for catalog in catalogs:
-        results.append((_store_catalogs(
+        results.append((_store_catalog(
             catalog['title'], catalog['url'], catalog['summary'])))
     return [i for i in results if i is not None]
 
@@ -156,7 +177,7 @@ def get_all_available_collections_from_all_public_catalogs() -> List[List[Dict[a
     data = []
     public_catalogs: [PublicCatalog] = PublicCatalog.query.all()
     for public_catalog in public_catalogs:
-        data.append = ((get_all_available_collections_from_public_catalog(public_catalog)))
+        data.append ((get_all_available_collections_from_public_catalog(public_catalog)))
     # return data where not None
     return [i for i in data if i is not None]
 
@@ -337,16 +358,43 @@ def _store_search_parameters(associated_catalogue_id,
     :param parameters:
     :return:
     """
-    for collection in parameters['collections']:
-        filtered_parameters = parameters.copy()
-        filtered_parameters['collections'] = [collection]
+    try:
+        for collection in parameters['collections']:
+            filtered_parameters = parameters.copy()
+            filtered_parameters['collections'] = [collection]
 
+            try:
+                stored_search_parameters = StoredSearchParameters()
+                stored_search_parameters.associated_catalog_id = associated_catalogue_id
+                stored_search_parameters.used_search_parameters = json.dumps(
+                    filtered_parameters)
+                stored_search_parameters.collection = collection
+                try:
+                    stored_search_parameters.bbox = json.dumps(
+                        filtered_parameters['bbox'])
+                except KeyError:
+                    pass
+                try:
+                    stored_search_parameters.datetime = json.dumps(
+                        filtered_parameters['datetime'])
+                except KeyError:
+                    pass
+
+                db.session.add(stored_search_parameters)
+                db.session.commit()
+                return
+            except sqlalchemy.exc.IntegrityError:
+                # exact same search parameters already exist, no need to store them again
+                pass
+            finally:
+                db.session.rollback()
+    except KeyError:
+        filtered_parameters = parameters.copy()
         try:
             stored_search_parameters = StoredSearchParameters()
             stored_search_parameters.associated_catalog_id = associated_catalogue_id
             stored_search_parameters.used_search_parameters = json.dumps(
                 filtered_parameters)
-            stored_search_parameters.collection = collection
             try:
                 stored_search_parameters.bbox = json.dumps(
                     filtered_parameters['bbox'])
@@ -360,6 +408,7 @@ def _store_search_parameters(associated_catalogue_id,
 
             db.session.add(stored_search_parameters)
             db.session.commit()
+            return
         except sqlalchemy.exc.IntegrityError:
             # exact same search parameters already exist, no need to store them again
             pass

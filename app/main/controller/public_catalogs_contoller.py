@@ -39,6 +39,12 @@ class PublicCatalogs(Resource):
                        'message': 'Catalog with this url already exists',
                    }, 409
 
+    @api.doc(description='Delete all public catalogs from the database')
+    @api.response(200, 'Success')
+    def delete(self):
+        public_catalogs_service.remove_all_catalogs()
+        return {"message": "Deleted all catalogs"}, 200
+
 
 @api.route('/sync')
 class PublicCatalogsUpdate(Resource):
