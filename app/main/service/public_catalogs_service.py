@@ -195,10 +195,71 @@ def _store_catalog_and_collections(title, url, summary) -> int or None:
         return _store_collections(already_existing_catalog)
 
 
-def find_all_collections(bbox: shapely.geometry.polygon.Polygon):
+def find_all_collections(bbox: shapely.geometry.polygon.Polygon or list[float], start_timestamp: str = None,
+                         end_timestamp: str = None, public_catalog_id: int = None) -> dict[str, any] or list[any]:
+    if public_catalog_id:
+        try:
+            get_public_catalog_by_id_as_dict(public_catalog_id)
+        except CatalogDoesNotExistError:
+            raise CatalogDoesNotExistError
+
+    if isinstance(bbox, list):
+        bbox = shapely.geometry.box(*bbox)
     a = db.session.query(PublicCollection).filter(PublicCollection.spatial_extent.ST_Intersects(
-        f"SRID=4326;{bbox.wkt}")).all()
-    return a
+        f"SRID=4326;{bbox.wkt}"))
+    if public_catalog_id:
+        a = a.filter(PublicCollection.parent_catalog == public_catalog_id)
+
+    potential_timestamp_formats = [
+        '%Y-%m-%dT%H:%M:%S%z',
+        '%Y-%m-%dT%H:%M:%S.%f%z',
+        '%Y-%m-%dT%H:%M:%S',
+        '%Y-%m-%dT%H:M',
+        '%d-%m-%YT%H:%M:%S%z',
+        '%d-%m-%YT%H:%M:%S'
+        '%d-%m-%YT%H:%M'
+    ]
+    if start_timestamp is not None:
+        for fmt in potential_timestamp_formats:
+            try:
+                start_timestamp = datetime.datetime.strptime(start_timestamp, fmt)
+                break
+            except ValueError:
+                continue
+        if start_timestamp is None:
+            raise ConvertingTimestampError
+        a = a.filter(PublicCollection.temporal_extent_start >= start_timestamp)
+    if end_timestamp is not None:
+        for fmt in potential_timestamp_formats:
+            try:
+                end_timestamp = datetime.datetime.strptime(end_timestamp, fmt)
+                break
+            except ValueError:
+                continue
+        if end_timestamp is None:
+            raise ConvertingTimestampError
+        a = a.filter(PublicCollection.temporal_extent_end <= end_timestamp)
+    data = a.all()
+    # group data by parent_catalog parameter
+    grouped_data = {}
+    for item in data:
+        item: PublicCollection
+        if item.parent_catalog in grouped_data:
+            grouped_data[item.parent_catalog]["collections"].append(item.as_dict())
+        else:
+            grouped_data[item.parent_catalog] = {}
+            grouped_data[item.parent_catalog]["catalog"] = PublicCatalog.query.filter_by(
+                id=item.parent_catalog).first().as_dict()
+            grouped_data[item.parent_catalog]["collections"] = []
+            grouped_data[item.parent_catalog]["collections"].append(item.as_dict())
+    if not public_catalog_id:
+        keys = list(grouped_data.keys())
+        out = []
+        for i in keys:
+            out.append(grouped_data[i])
+        return out
+    else:
+        return grouped_data[public_catalog_id]
 
 
 def _get_all_available_collections_from_public_catalog(public_catalogue_entry: PublicCatalog) -> List[Dict[

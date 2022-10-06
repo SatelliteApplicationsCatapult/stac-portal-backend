@@ -163,6 +163,33 @@ class PublicCatalogsDto:
         },
     )
 
+    get_public_collections = api.model(
+        "get_public_collections",
+        {
+            "extent": fields.Nested(
+                api.model(
+                    "extent",
+                    {
+                        "spatial": fields.List(
+                            fields.Float,
+                            required=True,
+                            description="spatial extent",
+                            example=[-180, -90, 180, 90],
+                        ),
+                        "temporal": fields.List(
+                            fields.String,
+                            required=False,
+                            description="temporal extent",
+                            example=["2021-05-05T00:00:00Z/2022-05-05T00:00:00Z"],
+                        ),
+                    },
+                ),
+                required=True,
+                description="spatial and temporal extent",
+            )
+        }
+    )
+
     start_stac_ingestion = api.model(
         "start_stac_ingestion",
         {  # 'source_stac_catalog_url':

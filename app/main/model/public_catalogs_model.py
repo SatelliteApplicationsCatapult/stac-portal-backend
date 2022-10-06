@@ -1,7 +1,8 @@
 import datetime
 
 from geoalchemy2 import Geometry
-
+from geoalchemy2.shape import to_shape
+import shapely
 from .. import db
 
 
@@ -49,6 +50,20 @@ class PublicCollection(db.Model):
     spatial_extent = db.Column(Geometry(geometry_type="MULTIPOLYGON"), nullable=True, default=None)
     parent_catalog = db.Column(db.Integer, db.ForeignKey("public_catalogs.id", ondelete='CASCADE'), nullable=False)
     __table_args__ = (db.UniqueConstraint('id', 'parent_catalog', name='_id_parent_catalog_uc'),)
+
+    def as_dict(self):
+        data = {
+            c.name: str(getattr(self, c.name))
+            for c in self.__table__.columns
+        }
+        # remove _id from data
+        data.pop("_id")
+        spatial_extent = data.pop("spatial_extent")
+        # convert spatial_extent to shapely
+        shape:shapely.geometry.polygon.Polygon = to_shape(self.spatial_extent)
+        data["spatial_extent_wkt"] = shape.wkt
+
+        return data
 
 
 class StoredSearchParameters(db.Model):
