@@ -17,4 +17,4 @@ class StacGenerator(Resource):
     @api.response(500, "Internal server error")
     def post(self):
         data = request.json
-        return create_STAC_Item(data)
+        return create_STAC_Item(data['metadata'])
