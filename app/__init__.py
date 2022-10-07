@@ -7,6 +7,7 @@ from .main.controller.public_catalogs_contoller import api as public_catalogs_ns
 from .main.controller.status_reporting_controller import api as status_controller_ns
 from .main.controller.file_controller import api as file_ns
 from .main.controller.gdal_info_controller import api as gdal_info_ns
+from .main.controller.stac_generator_controller import api as stac_generator_ns
 
 blueprint = Blueprint('api', __name__)
 
@@ -23,4 +24,4 @@ api.add_namespace(public_catalogs_ns, path='/public_catalogs')
 api.add_namespace(status_controller_ns, path='/status_reporting')
 api.add_namespace(file_ns, path='/file')
 api.add_namespace(gdal_info_ns, path='/gdal_info')
-
+api.add_namespace(stac_generator_ns, path='/stac_generator')
