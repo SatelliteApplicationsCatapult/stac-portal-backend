@@ -1,16 +1,16 @@
 """empty message
 
-Revision ID: b0a60e26f6e1
+Revision ID: ff967b1d8dab
 Revises: 
-Create Date: 2022-10-04 10:38:48.350894
+Create Date: 2022-10-05 14:55:31.584909
 
 """
 from alembic import op
 import sqlalchemy as sa
-
+import geoalchemy2
 
 # revision identifiers, used by Alembic.
-revision = 'b0a60e26f6e1'
+revision = 'ff967b1d8dab'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -27,6 +27,20 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('url')
     )
+    op.create_table('public_collections',
+    sa.Column('_id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('id', sa.Text(), nullable=False),
+    sa.Column('type', sa.Text(), nullable=False),
+    sa.Column('title', sa.Text(), nullable=False),
+    sa.Column('description', sa.Text(), nullable=False),
+    sa.Column('temporal_extent_start', sa.DateTime(), nullable=True),
+    sa.Column('temporal_extent_end', sa.DateTime(), nullable=True),
+    sa.Column('spatial_extent', geoalchemy2.types.Geometry(geometry_type='POLYGON', from_text='ST_GeomFromEWKT', name='geometry'), nullable=True),
+    sa.Column('parent_catalog', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['parent_catalog'], ['public_catalogs.id'], ),
+    sa.PrimaryKeyConstraint('_id')
+    )
+    # op.create_index('idx_public_collections_spatial_extent', 'public_collections', ['spatial_extent'], unique=False, postgresql_using='gist')
     op.create_table('stac_ingestion_status',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('time_started', sa.DateTime(), nullable=True),
@@ -66,5 +80,7 @@ def downgrade():
     op.drop_table('stored_search_parameters')
     op.drop_index(op.f('ix_stac_ingestion_status_source_stac_api_url'), table_name='stac_ingestion_status')
     op.drop_table('stac_ingestion_status')
+    op.drop_index('idx_public_collections_spatial_extent', table_name='public_collections', postgresql_using='gist')
+    op.drop_table('public_collections')
     op.drop_table('public_catalogs')
     # ### end Alembic commands ###

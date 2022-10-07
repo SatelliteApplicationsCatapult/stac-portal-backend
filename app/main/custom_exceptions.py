@@ -9,5 +9,10 @@ class CatalogDoesNotExistError(Error):
 class CatalogAlreadyExistsError(Error):
     pass
 
+
 class MicroserviceIsNotAvailableError(Error):
+    pass
+
+
+class ConvertingTimestampError(Error):
     pass

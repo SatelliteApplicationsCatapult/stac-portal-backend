@@ -75,6 +75,7 @@ def does_file_exist_on_blob(filename: str) -> bool:
             blob_service_client.close()
     except Exception as e:
         return False
+
     
 def retrieve_file_url(filename: str):
     connection_string = current_app.config[

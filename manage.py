@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 
 from app import blueprint
 from app.main import create_app, db
+from app.main.model import *
 
 app = create_app(os.getenv('FLASK_ENV') or 'dev')
 app.register_blueprint(blueprint)
@@ -19,8 +20,8 @@ FLASK_APP = "manage.py"
 
 
 def run():
-    app.run(host='0.0.0.0', port=5000)
     db.create_all()
+    app.run(host='0.0.0.0', port=5000)
 
 
 if __name__ == '__main__':

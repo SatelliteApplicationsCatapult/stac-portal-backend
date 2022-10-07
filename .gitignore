@@ -2,14 +2,12 @@
 node_modules
 
 .DS_Store
-.env
 .flaskenv
 *.pyc
 *.pyo
 env/
 venv/
 .venv/
-env*
 dist/
 build/
 *.egg

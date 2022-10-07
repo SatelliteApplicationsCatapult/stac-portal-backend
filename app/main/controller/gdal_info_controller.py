@@ -6,6 +6,7 @@ from ..util.dto import GdalInfoDto
 
 api = GdalInfoDto.api
 
+
 @api.route("/")
 class GdalInfo(Resource):
 

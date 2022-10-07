@@ -50,7 +50,6 @@ class CommitStacAssets(Resource):
         except FileExistsError:
             return {"message": "File already exists"}, 409
 
-
 @api.route("/stac_assets/<item_id>/url")
 class RetrieveStacAssets(Resource):
     @api.doc(description="Retrieve stac assets from the backend")

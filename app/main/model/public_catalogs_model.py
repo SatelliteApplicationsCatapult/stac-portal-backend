@@ -1,5 +1,9 @@
 import datetime
 
+from geoalchemy2 import Geometry
+from geoalchemy2.shape import to_shape
+import shapely
+
 from .. import db
 
 
@@ -16,6 +20,8 @@ class PublicCatalog(db.Model):
                                                cascade="all, delete-orphan")
     stored_ingestion_statuses = db.relationship("StacIngestionStatus", backref="public_catalogs", lazy="dynamic",
                                                 cascade="all, delete-orphan")
+    collections = db.relationship("PublicCollection", backref="public_catalogs", lazy="dynamic",
+                                  cascade="all, delete-orphan")
 
     def get_number_of_stored_search_parameters(self):
         return StoredSearchParameters.query.filter_by(
@@ -30,6 +36,34 @@ class PublicCatalog(db.Model):
         data[
             "number_of_stored_search_parameters_associated"] = self.get_number_of_stored_search_parameters(
         )
+        return data
+
+
+class PublicCollection(db.Model):
+    __tablename__ = "public_collections"
+    _id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Text, nullable=False)
+    type = db.Column(db.Text, nullable=False, default="Collection")
+    title = db.Column(db.Text, nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    temporal_extent_start = db.Column(db.DateTime, nullable=True, default=None)
+    temporal_extent_end = db.Column(db.DateTime, nullable=True, default=None)
+    spatial_extent = db.Column(Geometry(geometry_type="MULTIPOLYGON"), nullable=True, default=None)
+    parent_catalog = db.Column(db.Integer, db.ForeignKey("public_catalogs.id", ondelete='CASCADE'), nullable=False)
+    __table_args__ = (db.UniqueConstraint('id', 'parent_catalog', name='_id_parent_catalog_uc'),)
+
+    def as_dict(self):
+        data = {
+            c.name: str(getattr(self, c.name))
+            for c in self.__table__.columns
+        }
+        # remove _id from data
+        data.pop("_id")
+        spatial_extent = data.pop("spatial_extent")
+        # convert spatial_extent to shapely
+        shape: shapely.geometry.polygon.Polygon = to_shape(self.spatial_extent)
+        data["spatial_extent_wkt"] = shape.wkt
+
         return data
 
 
