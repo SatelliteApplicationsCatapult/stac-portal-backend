@@ -1,6 +1,8 @@
+import re
 import azure.core.exceptions
 from azure.storage.blob import BlobServiceClient
 from flask import current_app
+import requests
 
 
 def check_blob_status():
@@ -73,3 +75,34 @@ def does_file_exist_on_blob(filename: str) -> bool:
             blob_service_client.close()
     except Exception as e:
         return False
+
+    
+def retrieve_file_url(filename: str):
+    connection_string = current_app.config[
+        "AZURE_STORAGE_CONNECTION_STRING"]
+    blob_service_client = BlobServiceClient.from_connection_string(
+        connection_string)
+    container_name = current_app.config[
+        "AZURE_STORAGE_BLOB_NAME_FOR_STAC_ITEMS"]
+
+    try:
+        blob_client = blob_service_client.get_blob_client(
+            container=container_name, blob=filename)
+        # Get url for download
+        return blob_client.url
+    except azure.core.exceptions.ResourceNotFoundError as e:
+        blob_service_client.close()
+        raise FileNotFoundError
+    finally:
+        blob_service_client.close()
+        
+
+def parse_file_json(file_url:str):
+    try:
+        response = requests.get(file_url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.HTTPError as http_err:
+        raise http_err
+    except Exception as err:
+        raise err
