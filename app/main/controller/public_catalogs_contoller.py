@@ -39,35 +39,88 @@ class PublicCatalogs(Resource):
                        'message': 'Catalog with this url already exists',
                    }, 409
 
+    @api.doc(description='Delete all public catalogs from the database')
+    @api.response(200, 'Success')
+    def delete(self):
+        public_catalogs_service.remove_all_public_catalogs()
+        return {"message": "Deleted all catalogs"}, 200
+
 
 @api.route('/sync')
 class PublicCatalogsUpdate(Resource):
     @api.doc(description='Get all public catalogs and update them')
     @api.response(200, 'Success')
     def get(self):
-        return public_catalogs_service.get_publicly_available_catalogs(), 200
+        return public_catalogs_service.store_publicly_available_catalogs(), 200
 
-
-@api.route("/<int:public_catalog_id>/collections")
-class PublicCatalogsCollections(Resource):
-    @api.doc(description='Get all collections of a public catalog')
-    @api.response(200, 'Success')
-    @api.response(404, 'Not Found - Catalog does not exist')
-    def get(self, public_catalog_id):
-        try:
-            return public_catalogs_service.get_all_available_collections_from_public_catalog_via_catalog_id(
-                public_catalog_id), 200
-        except CatalogDoesNotExistError as e:
-            return {
-                       'message': 'Catalog with this id does not exist',
-                   }, 404
 
 @api.route("/collections")
 class PublicCatalogsCollections(Resource):
     @api.doc(description='Get all collections of all public catalogs')
     @api.response(200, 'Success')
-    def get(self):
-        return public_catalogs_service.get_all_available_collections_from_all_public_catalogs(), 200
+    @api.expect(PublicCatalogsDto.get_public_collections, validate=True)
+    def post(self):
+        spatial_extent_list: list[float] = request.json['extent']['spatial']
+        temporal_extent_list: list[str] = request.json['extent']['temporal'][0].split('/')
+        if len(temporal_extent_list) != 2:
+            print(temporal_extent_list)
+            return {
+                       'message': """temporal extent must be a string with two 
+                       elements separated by a /, use .. for open ranges""",
+                   }, 400
+
+        try:
+            temporal_extent_start = temporal_extent_list[0]
+            if temporal_extent_start == '..' or temporal_extent_start == '':
+                temporal_extent_start = None
+        except KeyError:
+            temporal_extent_start = None
+        try:
+            temporal_extent_end = temporal_extent_list[1]
+            if temporal_extent_end == '..' or temporal_extent_end == '':
+                temporal_extent_end = None
+        except KeyError:
+            temporal_extent_end = None
+        return (public_catalogs_service.find_all_collections(spatial_extent_list, temporal_extent_start,
+                                                             temporal_extent_end)), 200
+
+
+@api.route("/<int:public_catalog_id>/collections")
+class SpecificPublicCatalogCollections(Resource):
+    @api.doc(description="Get all collections for specified public catalog")
+    @api.response(200, "Success")
+    @api.response(404, "Not Found - Catalog does not exist")
+    @api.expect(PublicCatalogsDto.get_public_collections, validate=True)
+    def post(self, public_catalog_id):
+        spatial_extent_list: list[float] = request.json['extent']['spatial']
+        temporal_extent_list: list[str] = request.json['extent']['temporal'][0].split('/')
+        if len(temporal_extent_list) != 2:
+            print(temporal_extent_list)
+            return {
+                       'message': """Temporal extent must be a string with two 
+                       elements separated by a /, use .. for open ranges""",
+                   }, 400
+
+        try:
+            temporal_extent_start = temporal_extent_list[0]
+            if temporal_extent_start == '..' or temporal_extent_start == '':
+                temporal_extent_start = None
+        except KeyError:
+            temporal_extent_start = None
+        try:
+            temporal_extent_end = temporal_extent_list[1]
+            if temporal_extent_end == '..' or temporal_extent_end == '':
+                temporal_extent_end = None
+        except KeyError:
+            temporal_extent_end = None
+        try:
+            return (public_catalogs_service.find_all_collections(spatial_extent_list, temporal_extent_start,
+                                                                 temporal_extent_end, public_catalog_id)), 200
+        except CatalogDoesNotExistError:
+            return {
+                       'message': 'Catalog with this id does not exist',
+                   }, 404
+
 
 @api.route('/<int:public_catalog_id>')
 class PublicCatalogsViaId(Resource):
@@ -103,7 +156,7 @@ class GetStacRecordsSpecifyingPublicCatalogId(Resource):
     def post(self, public_catalog_id):
         data = request.json
         try:
-            return public_catalogs_service.load_get_specific_collections_via_catalog_id(
+            return public_catalogs_service.load_specific_collections_via_catalog_id(
                 public_catalog_id, data), 200
         except CatalogDoesNotExistError as e:
             return {'message': 'Public catalog not found'}, 404
@@ -125,8 +178,7 @@ class UpdateAllStacRecords(Resource):
             response = []
             for i in result:
                 response.append({
-                    "message": i[0],
-                    "callback_id": i[1],
+                    "operation_number": i,
                 })
             return response, 200
         except ConnectionError as e:

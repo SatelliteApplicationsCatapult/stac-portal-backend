@@ -1,5 +1,7 @@
 import os
+
 basedir = os.path.abspath(os.path.dirname(__file__))
+
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'my_precious_secret_key')
@@ -13,7 +15,8 @@ class DevelopmentConfig(Config):
     # here are variables available only for development environment
     DEBUG = True
     ENV = "Dev"
-    SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI", "postgresql://postgres:postgres@localhost:5432/postgres")
+    SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI",
+                                        "postgresql://postgres:postgres@localhost:5432/postgres")
     TARGET_STAC_API_SERVER = os.getenv('TARGET_STAC_API_SERVER', "http://localhost:8082")
     STAC_VALIDATOR_ENDPOINT = os.getenv('STAC_VALIDATOR_ENDPOINT', "http://localhost:7000")
     STAC_SELECTIVE_INGESTER_ENDPOINT = os.getenv('STAC_SELECTIVE_INGESTER_ENDPOINT', "http://localhost:7001")
@@ -24,12 +27,17 @@ class DevelopmentConfig(Config):
 class StagingConfig(Config):
     DEBUG = False
     ENV = "Staging"
-    SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI", "postgresql://postgres:postgres@ctplt-pda-rg-dev-psqlflexibleserver.postgres.database.azure.com:5432/stacportaldb")
+    SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI",
+                                        "postgresql://postgres:postgres@ctplt-pda-rg-dev-psqlflexibleserver.postgres.database.azure.com:5432/stacportaldb")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    TARGET_STAC_API_SERVER = os.getenv('TARGET_STAC_API_SERVER', "http://ctplt-pda-rg-dev-stac-api-server.azurewebsites.net/")
-    STAC_VALIDATOR_ENDPOINT = os.getenv('STAC_VALIDATOR_ENDPOINT', "http://stac-validator-api.microservices.ctplt-pda-rg-dev.azure.com")
-    STAC_SELECTIVE_INGESTER_ENDPOINT = os.getenv('STAC_SELECTIVE_INGESTER_ENDPOINT', "http://stac-api-selective-ingester.microservices.ctplt-pda-rg-dev.azure.com/")
-    GDAL_INFO_API_ENDPOINT = os.getenv('GDAL_INFO_API_ENDPOINT', "http://gdal-info-api.microservices.ctplt-pda-rg-dev.azure.com")
+    TARGET_STAC_API_SERVER = os.getenv('TARGET_STAC_API_SERVER',
+                                       "http://ctplt-pda-rg-dev-stac-api-server.azurewebsites.net/")
+    STAC_VALIDATOR_ENDPOINT = os.getenv('STAC_VALIDATOR_ENDPOINT',
+                                        "http://stac-validator-api.microservices.ctplt-pda-rg-dev.azure.com")
+    STAC_SELECTIVE_INGESTER_ENDPOINT = os.getenv('STAC_SELECTIVE_INGESTER_ENDPOINT',
+                                                 "http://stac-api-selective-ingester.microservices.ctplt-pda-rg-dev.azure.com/")
+    GDAL_INFO_API_ENDPOINT = os.getenv('GDAL_INFO_API_ENDPOINT',
+                                       "http://gdal-info-api.microservices.ctplt-pda-rg-dev.azure.com")
     AZURE_STORAGE_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING', "")
 
 
