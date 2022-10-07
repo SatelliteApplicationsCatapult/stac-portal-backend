@@ -1,9 +1,10 @@
+from typing import Dict, Tuple
+
 from flask import request, jsonify
 from flask_restx import Resource
 
 from ..service.validate_service import validate_json
 from ..util.dto import ValidateDto
-from typing import Dict, Tuple, Any
 
 api = ValidateDto.api
 validate = ValidateDto.validate

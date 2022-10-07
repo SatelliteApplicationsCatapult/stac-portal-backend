@@ -58,31 +58,12 @@ class PublicCatalogsUpdate(Resource):
 class PublicCatalogsCollections(Resource):
     @api.doc(description='Get all collections of all public catalogs')
     @api.response(200, 'Success')
-    @api.expect(PublicCatalogsDto.get_public_collections, validate=True)
+    @api.expect(PublicCatalogsDto.collection_search, validate=True)
     def post(self):
-        spatial_extent_list: list[float] = request.json['extent']['spatial']
-        temporal_extent_list: list[str] = request.json['extent']['temporal'][0].split('/')
-        if len(temporal_extent_list) != 2:
-            print(temporal_extent_list)
-            return {
-                       'message': """temporal extent must be a string with two 
-                       elements separated by a /, use .. for open ranges""",
-                   }, 400
-
-        try:
-            temporal_extent_start = temporal_extent_list[0]
-            if temporal_extent_start == '..' or temporal_extent_start == '':
-                temporal_extent_start = None
-        except KeyError:
-            temporal_extent_start = None
-        try:
-            temporal_extent_end = temporal_extent_list[1]
-            if temporal_extent_end == '..' or temporal_extent_end == '':
-                temporal_extent_end = None
-        except KeyError:
-            temporal_extent_end = None
-        return (public_catalogs_service.find_all_collections(spatial_extent_list, temporal_extent_start,
-                                                             temporal_extent_end)), 200
+        spatial_extent: list[float] = request.json['bbox']
+        temporal_extent: str = request.json['datetime']
+        return (public_catalogs_service.find_all_collections(spatial_extent, temporal_extent,
+                                                             )), 200
 
 
 @api.route("/<int:public_catalog_id>/collections")
@@ -90,32 +71,13 @@ class SpecificPublicCatalogCollections(Resource):
     @api.doc(description="Get all collections for specified public catalog")
     @api.response(200, "Success")
     @api.response(404, "Not Found - Catalog does not exist")
-    @api.expect(PublicCatalogsDto.get_public_collections, validate=True)
+    @api.expect(PublicCatalogsDto.collection_search, validate=True)
     def post(self, public_catalog_id):
-        spatial_extent_list: list[float] = request.json['extent']['spatial']
-        temporal_extent_list: list[str] = request.json['extent']['temporal'][0].split('/')
-        if len(temporal_extent_list) != 2:
-            print(temporal_extent_list)
-            return {
-                       'message': """Temporal extent must be a string with two 
-                       elements separated by a /, use .. for open ranges""",
-                   }, 400
-
+        spatial_extent: list[float] = request.json['bbox']
+        temporal_extent: str = request.json['datetime']
         try:
-            temporal_extent_start = temporal_extent_list[0]
-            if temporal_extent_start == '..' or temporal_extent_start == '':
-                temporal_extent_start = None
-        except KeyError:
-            temporal_extent_start = None
-        try:
-            temporal_extent_end = temporal_extent_list[1]
-            if temporal_extent_end == '..' or temporal_extent_end == '':
-                temporal_extent_end = None
-        except KeyError:
-            temporal_extent_end = None
-        try:
-            return (public_catalogs_service.find_all_collections(spatial_extent_list, temporal_extent_start,
-                                                                 temporal_extent_end, public_catalog_id)), 200
+            return (public_catalogs_service.find_all_collections(spatial_extent, temporal_extent,
+                                                                 public_catalog_id)), 200
         except CatalogDoesNotExistError:
             return {
                        'message': 'Catalog with this id does not exist',

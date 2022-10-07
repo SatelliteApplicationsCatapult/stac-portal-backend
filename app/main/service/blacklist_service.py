@@ -1,7 +1,8 @@
-from app.main import db
+from typing import Dict, Tuple
 
 from app.main.model.blacklist import BlacklistToken
-from typing import Dict, Tuple
+
+from app.main import db
 
 
 def save_token(token: str) -> Tuple[Dict[str, str], int]:

@@ -1,4 +1,3 @@
-import datetime
 import json
 import multiprocessing
 from threading import Thread
@@ -17,6 +16,7 @@ from .status_reporting_service import make_stac_ingestion_status_entry, set_stac
 from .. import db
 from ..custom_exceptions import *
 from ..model.public_catalogs_model import StoredSearchParameters
+from ..util import process_timestamp
 
 
 def store_new_public_catalog(name: str, url: str, description: str, return_as_dict=True) -> Dict[
@@ -59,7 +59,7 @@ def store_publicly_available_catalogs() -> Tuple[int, int]:
     filtered_response_result = [i for i in response_result if i['isPrivate'] == False and i['isApi'] == True]
     results = []
     work = []
-    pool = multiprocessing.Pool(processes=8)
+    pool = multiprocessing.Pool(processes=4)
     for catalog in filtered_response_result:
         work.append(
             pool.apply_async(_store_catalog_and_collections, (catalog['title'], catalog['url'], catalog['summary'])))
@@ -124,36 +124,23 @@ def _store_collections(public_catalog_entry: PublicCatalog) -> int:
                 print("Creating new collection: " + collection['id'])
                 public_collection: PublicCollection = PublicCollection()
                 public_collection.id = collection['id']
-
             try:
                 public_collection.type = collection['type']
             except KeyError:
                 public_collection.type = "Collection"
-            public_collection.title = collection['title']
-            public_collection.description = collection['description']
+            try:
+                public_collection.title = collection['title']
+            except KeyError:
+                public_collection.title = None
+            try:
+                public_collection.description = collection['description']
+            except:
+                public_collection.description = None
             start_time_string = collection['extent']['temporal']['interval'][0][0]
             end_time_string = collection['extent']['temporal']['interval'][0][1]
-            potential_datetime_formats = ['%Y-%m-%dT%H:%M:%S%z', '%Y-%m-%dT%H:%M:%S.%f%z', '%Y-%m-%dT%H:%M:%S.%f']
-            if start_time_string is not None:
-                public_collection.temporal_extent_start = None
-                for fmt in potential_datetime_formats:
-                    try:
-                        public_collection.temporal_extent_start = datetime.datetime.strptime(start_time_string, fmt)
-                        break
-                    except ValueError:
-                        continue
-                if public_collection.temporal_extent_start is None:
-                    raise ConvertingTimestampError
-            if end_time_string is not None:
-                public_collection.temporal_extent_end = None
-                for fmt in potential_datetime_formats:
-                    try:
-                        public_collection.temporal_extent_end = datetime.datetime.strptime(end_time_string, fmt)
-                        break
-                    except ValueError:
-                        continue
-                if public_collection.temporal_extent_end is None:
-                    raise ConvertingTimestampError
+            public_collection.temporal_extent_start = process_timestamp.process_timestamp_from_interval(
+                start_time_string)
+            public_collection.temporal_extent_end = process_timestamp.process_timestamp_from_interval(end_time_string)
             bboxes = collection['extent']['spatial']['bbox']
             shapely_boxes = []
             for i in range(0, len(bboxes)):
@@ -195,8 +182,8 @@ def _store_catalog_and_collections(title, url, summary) -> int or None:
         return _store_collections(already_existing_catalog)
 
 
-def find_all_collections(bbox: shapely.geometry.polygon.Polygon or list[float], start_timestamp: str = None,
-                         end_timestamp: str = None, public_catalog_id: int = None) -> dict[str, any] or list[any]:
+def find_all_collections(bbox: shapely.geometry.polygon.Polygon or list[float], time_interval_timestamp: str,
+                         public_catalog_id: int = None) -> dict[str, any] or list[any]:
     if public_catalog_id:
         try:
             get_public_catalog_by_id_as_dict(public_catalog_id)
@@ -209,36 +196,12 @@ def find_all_collections(bbox: shapely.geometry.polygon.Polygon or list[float], 
         f"SRID=4326;{bbox.wkt}"))
     if public_catalog_id:
         a = a.filter(PublicCollection.parent_catalog == public_catalog_id)
+    time_start, time_end = process_timestamp.process_timestamp(time_interval_timestamp)
+    if time_start:
+        a = a.filter(PublicCollection.temporal_extent_start <= time_start)
+    if time_end:
+        a = a.filter(PublicCollection.temporal_extent_end >= time_end)
 
-    potential_timestamp_formats = [
-        '%Y-%m-%dT%H:%M:%S%z',
-        '%Y-%m-%dT%H:%M:%S.%f%z',
-        '%Y-%m-%dT%H:%M:%S',
-        '%Y-%m-%dT%H:M',
-        '%d-%m-%YT%H:%M:%S%z',
-        '%d-%m-%YT%H:%M:%S'
-        '%d-%m-%YT%H:%M'
-    ]
-    if start_timestamp is not None:
-        for fmt in potential_timestamp_formats:
-            try:
-                start_timestamp = datetime.datetime.strptime(start_timestamp, fmt)
-                break
-            except ValueError:
-                continue
-        if start_timestamp is None:
-            raise ConvertingTimestampError
-        a = a.filter(PublicCollection.temporal_extent_start >= start_timestamp)
-    if end_timestamp is not None:
-        for fmt in potential_timestamp_formats:
-            try:
-                end_timestamp = datetime.datetime.strptime(end_timestamp, fmt)
-                break
-            except ValueError:
-                continue
-        if end_timestamp is None:
-            raise ConvertingTimestampError
-        a = a.filter(PublicCollection.temporal_extent_end <= end_timestamp)
     data = a.all()
     # group data by parent_catalog parameter
     grouped_data = {}
@@ -259,7 +222,10 @@ def find_all_collections(bbox: shapely.geometry.polygon.Polygon or list[float], 
             out.append(grouped_data[i])
         return out
     else:
-        return grouped_data[public_catalog_id]
+        try:
+            return grouped_data[public_catalog_id]
+        except KeyError:
+            return []
 
 
 def _get_all_available_collections_from_public_catalog(public_catalogue_entry: PublicCatalog) -> List[Dict[

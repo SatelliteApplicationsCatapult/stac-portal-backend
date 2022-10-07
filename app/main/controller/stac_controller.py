@@ -1,7 +1,5 @@
-import sqlalchemy
-from flask import request
 from flask_restx import Resource
-from typing import Tuple, Dict
+
 from ..util.dto import StacDto
 
 api = StacDto.api

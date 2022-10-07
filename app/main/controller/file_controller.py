@@ -1,4 +1,3 @@
-from flask import request
 from flask_restx import Resource
 from werkzeug.utils import secure_filename
 

@@ -16,3 +16,19 @@ class MicroserviceIsNotAvailableError(Error):
 
 class ConvertingTimestampError(Error):
     pass
+
+
+class TemporalExtentError(Error):
+    pass
+
+
+class PrivateCollectionAlreadyExistsError(Error):
+    pass
+
+
+class InvalidCollectionPayloadError(Error):
+    pass
+
+
+class PrivateCollectionDoesNotExistError(Error):
+    pass
