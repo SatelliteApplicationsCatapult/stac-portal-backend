@@ -54,21 +54,6 @@ class PublicCatalogsUpdate(Resource):
         return public_catalogs_service.store_publicly_available_catalogs(), 200
 
 
-# @api.route("/<int:public_catalog_id>/collections")
-# class PublicCatalogsCollections(Resource):
-#     @api.doc(description='Get all collections of a public catalog')
-#     @api.response(200, 'Success')
-#     @api.response(404, 'Not Found - Catalog does not exist')
-#     def get(self, public_catalog_id):
-#         try:
-#             return public_catalogs_service.get_all_available_collections_from_public_catalog_via_catalog_id(
-#                 public_catalog_id), 200
-#         except CatalogDoesNotExistError as e:
-#             return {
-#                        'message': 'Catalog with this id does not exist',
-#                    }, 404
-
-
 @api.route("/collections")
 class PublicCatalogsCollections(Resource):
     @api.doc(description='Get all collections of all public catalogs')

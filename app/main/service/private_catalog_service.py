@@ -74,23 +74,6 @@ def remove_collection_by_id(
         return _send_error_response(response)
 
 
-def get_item_from_collection(
-        collection_id: str,
-        item_id: str) -> Tuple[Dict[str, any], int] or Response:
-    response = requests.get(
-        route("COLLECTIONS") + collection_id + "/items/" + item_id)
-
-    if response.status_code in range(200, 203):
-        collection_json = response.json()
-        return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
-
-    else:
-        return _send_error_response(response)
-
-
 def add_item_to_collection(
         collection_id: str,
         item_data: Dict[str, any]) -> Tuple[Dict[str, any], int] or Response:
@@ -163,8 +146,6 @@ def remove_item_from_collection(
                         response.headers.items())
     else:
         return _send_error_response(response)
-
-
 
 
 def _send_error_response(

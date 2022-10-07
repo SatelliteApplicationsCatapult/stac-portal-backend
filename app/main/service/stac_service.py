@@ -86,3 +86,20 @@ def get_items_by_collection_id(
 
     else:
         return _send_error_response(response)
+
+
+def get_item_from_collection(
+        collection_id: str,
+        item_id: str) -> Tuple[Dict[str, any], int] or Response:
+    response = requests.get(
+        route("COLLECTIONS") + collection_id + "/items/" + item_id)
+
+    if response.status_code in range(200, 203):
+        collection_json = response.json()
+        return {
+                   "parameters": collection_json,
+                   "status": "success",
+               }, response.status_code
+
+    else:
+        return _send_error_response(response)

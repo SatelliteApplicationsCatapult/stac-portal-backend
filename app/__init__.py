@@ -17,7 +17,6 @@ api = Api(blueprint,
           description='Portal for accessing STAC PDA resources',
           security='apikey')
 
-
 api.add_namespace(collection_ns, path='/private_catalog')
 api.add_namespace(validate_ns, path='/validate')
 api.add_namespace(public_catalogs_ns, path='/public_catalogs')
@@ -25,4 +24,3 @@ api.add_namespace(status_controller_ns, path='/status_reporting')
 api.add_namespace(file_ns, path='/file')
 api.add_namespace(gdal_info_ns, path='/gdal_info')
 api.add_namespace(stac_ns, path='/stac')
-

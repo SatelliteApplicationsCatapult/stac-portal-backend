@@ -3,6 +3,7 @@ import datetime
 from geoalchemy2 import Geometry
 from geoalchemy2.shape import to_shape
 import shapely
+
 from .. import db
 
 
@@ -60,7 +61,7 @@ class PublicCollection(db.Model):
         data.pop("_id")
         spatial_extent = data.pop("spatial_extent")
         # convert spatial_extent to shapely
-        shape:shapely.geometry.polygon.Polygon = to_shape(self.spatial_extent)
+        shape: shapely.geometry.polygon.Polygon = to_shape(self.spatial_extent)
         data["spatial_extent_wkt"] = shape.wkt
 
         return data
