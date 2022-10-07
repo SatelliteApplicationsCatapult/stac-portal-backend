@@ -51,7 +51,10 @@ class PublicCatalogsUpdate(Resource):
     @api.doc(description='Get all public catalogs and update them')
     @api.response(200, 'Success')
     def get(self):
-        return public_catalogs_service.store_publicly_available_catalogs(), 200
+        number_of_catalogs, number_of_collections = public_catalogs_service.store_publicly_available_catalogs()
+        return {
+                     'message': f'Updated {number_of_catalogs} catalogs and {number_of_collections} collections',
+                    }, 200
 
 
 @api.route("/collections")
