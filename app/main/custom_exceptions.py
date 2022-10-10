@@ -38,6 +38,10 @@ class CollectionDoesNotExistError(Error):
     pass
 
 
+class PublicCollectionDoesNotExistError(CollectionDoesNotExistError):
+    pass
+
+
 class PrivateCollectionDoesNotExistError(CollectionDoesNotExistError):
     pass
 

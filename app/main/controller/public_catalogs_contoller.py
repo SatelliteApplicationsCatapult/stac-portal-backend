@@ -102,7 +102,7 @@ class SpecificPublicCatalogCollection(Resource):
             return {
                        'message': 'Catalog with this id does not exist',
                    }, 404
-        except CollectionDoesNotExistError:
+        except PublicCollectionDoesNotExistError:
             return {
                        'message': 'Collection with this id does not exist',
                    }, 404

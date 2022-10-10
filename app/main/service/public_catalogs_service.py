@@ -562,10 +562,13 @@ def remove_collection_from_public_catalog(catalog_id: int, collection_id: str):
     :param catalog_id: Catalog id of the public catalog
     :param collection_id: Collection id to remove from the public catalog
     """
-    public_catalog = PublicCollection.query.filter_by(parent_catalog_id=catalog_id, collection_id=collection_id).first()
-
+    public_catalog = PublicCollection.query.filter_by(parent_catalog=catalog_id, id=collection_id).first()
     if public_catalog is None:
-        raise ValueError("No public catalog found with id: " + str(catalog_id))
-    public_catalog.remove_collection(collection_id)
+        raise PublicCollectionDoesNotExistError
+    db.session.delete(public_catalog)
     db.session.commit()
-    stac_service.remove_public_collection_by_id_on_stac_api(collection_id)
+    try:
+        return stac_service.remove_public_collection_by_id_on_stac_api(collection_id)
+    except CollectionDoesNotExistError:
+        pass
+    return "Collection does not exist on STAC API"
