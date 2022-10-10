@@ -1,11 +1,11 @@
-from typing import Tuple
+from typing import Tuple, Dict
 
 from flask import request
 from flask_restx import Resource
 
 from ..custom_exceptions import *
-from ..service.private_catalog_service import *
-from ..service.stac_service import *
+from ..service import private_catalog_service
+from ..service import stac_service
 from ..util.dto import CollectionsDto
 
 api = CollectionsDto.api
@@ -18,11 +18,9 @@ class CollectionsList(Resource):
     @api.expect(CollectionsDto.collection_dto, validate=True)
     @api.response(200, "Success")
     @api.response(400, "Validation Error")
-    @api.response(403, "Unauthorized")
-    @api.response("4xx", "Stac API reported error")
     def post(self):
         try:
-            return add_collection(request.json)
+            return private_catalog_service.add_collection(request.json)
         except PrivateCollectionAlreadyExistsError as e:
             return {
                        "message": "Collection with this ID already exists",
@@ -40,7 +38,7 @@ class CollectionsList(Resource):
     @api.response("4xx", "Stac API reported error")
     def put(self):
         try:
-            return update_collection(request.json), 200
+            return private_catalog_service.update_collection(request.json), 200
         except PrivateCollectionDoesNotExistError as e:
             return {
                        "message": "Collection with this ID not found",
@@ -58,7 +56,7 @@ class Collection(Resource):
     @api.response(404, "Collection not found")
     def delete(self, collection_id: str) -> Tuple[Dict[str, str], int]:
         try:
-            return remove_collection(collection_id), 200
+            return private_catalog_service.remove_collection(collection_id), 200
         except PrivateCollectionDoesNotExistError as e:
             return {
                        "message": "Collection with this ID not found",
@@ -75,7 +73,7 @@ class CollectionItems(Resource):
     @api.expect(CollectionsDto.item_dto, validate=True)
     def post(self, collection_id):
         try:
-            return add_item_to_collection_on_stac_api(collection_id, request.json)
+            return stac_service.add_item_to_collection_on_stac_api(collection_id, request.json)
         except CollectionDoesNotExistError as e:
             return {
                        "message": "Collection with this ID not found",
@@ -99,7 +97,7 @@ class CollectionItem(Resource):
     @api.expect(CollectionsDto.item_dto, validate=True)
     def put(self, collection_id: str, item_id: str):
         try:
-            return update_item_in_collection_on_stac_api(collection_id, item_id, request.json), 200
+            return stac_service.update_item_in_collection_on_stac_api(collection_id, item_id, request.json), 200
         except CollectionDoesNotExistError as e:
             return {
                        "message": "Collection with this ID not found",
@@ -115,7 +113,7 @@ class CollectionItem(Resource):
     @api.response("4xx", "Stac API reported error")
     def delete(self, collection_id: str, item_id: str):
         try:
-            return remove_item_from_collection_on_stac_api(collection_id, item_id),200
+            return stac_service.remove_item_from_collection_on_stac_api(collection_id, item_id), 200
         except CollectionDoesNotExistError as e:
             return {
                        "message": "Collection with this ID not found",
@@ -124,4 +122,3 @@ class CollectionItem(Resource):
             return {
                        "message": "Item with this ID not found",
                    }, 404
-

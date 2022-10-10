@@ -1,10 +1,10 @@
-import datetime
 from typing import Dict
 
 import geoalchemy2
 from shapely.geometry import box, MultiPolygon
 
-from .stac_service import update_existing_collection_on_stac_api, create_new_collection_on_stac_api, remove_private_collection_by_id_on_stac_api
+from .stac_service import update_existing_collection_on_stac_api, create_new_collection_on_stac_api, \
+    remove_private_collection_by_id_on_stac_api
 from .. import db
 from ..custom_exceptions import *
 from ..model.private_catalog_model import PrivateCollection

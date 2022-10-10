@@ -41,8 +41,11 @@ class CollectionDoesNotExistError(Error):
 class PrivateCollectionDoesNotExistError(CollectionDoesNotExistError):
     pass
 
+
 class ItemAlreadyExistsError(Error):
     pass
+
+
 class PrivateItemAlreadyExistsError(ItemAlreadyExistsError):
     pass
 

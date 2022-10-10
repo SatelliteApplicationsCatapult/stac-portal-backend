@@ -53,8 +53,8 @@ class PublicCatalogsUpdate(Resource):
     def get(self):
         number_of_catalogs, number_of_collections = public_catalogs_service.store_publicly_available_catalogs()
         return {
-                     'message': f'Updated {number_of_catalogs} catalogs and {number_of_collections} collections',
-                    }, 200
+                   'message': f'Updated {number_of_catalogs} catalogs and {number_of_collections} collections',
+               }, 200
 
 
 @api.route("/collections")
@@ -84,6 +84,27 @@ class SpecificPublicCatalogCollections(Resource):
         except CatalogDoesNotExistError:
             return {
                        'message': 'Catalog with this id does not exist',
+                   }, 404
+
+
+@api.route("/<int:public_catalog_id>/collections/<string:collection_id>")
+class SpecificPublicCatalogCollection(Resource):
+    @api.doc(description="Get specified collection for specified public catalog")
+    @api.response(200, "Success")
+    @api.response(404, "Not Found - Catalog or collection does not exist")
+    def delete(self, public_catalog_id, collection_id):
+        try:
+            public_catalogs_service.remove_collection_from_public_catalog(public_catalog_id, collection_id)
+            return {
+                       'message': 'Collection successfully deleted',
+                   }, 200
+        except CatalogDoesNotExistError:
+            return {
+                       'message': 'Catalog with this id does not exist',
+                   }, 404
+        except CollectionDoesNotExistError:
+            return {
+                       'message': 'Collection with this id does not exist',
                    }, 404
 
 

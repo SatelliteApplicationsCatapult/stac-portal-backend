@@ -10,12 +10,14 @@ import sqlalchemy
 from flask import current_app
 from shapely.geometry import MultiPolygon
 from shapely.geometry import box
+from sqlalchemy import or_
 
 from app.main.model.public_catalogs_model import PublicCatalog, PublicCollection
 from .status_reporting_service import make_stac_ingestion_status_entry, set_stac_ingestion_status_entry
 from .. import db
 from ..custom_exceptions import *
 from ..model.public_catalogs_model import StoredSearchParameters
+from ..service import stac_service
 from ..util import process_timestamp
 
 
@@ -197,11 +199,14 @@ def find_all_collections(bbox: shapely.geometry.polygon.Polygon or list[float], 
     if public_catalog_id:
         a = a.filter(PublicCollection.parent_catalog == public_catalog_id)
     time_start, time_end = process_timestamp.process_timestamp_dual_string(time_interval_timestamp)
+    print("Time start: " + str(time_start))
+    print("Time end: " + str(time_end))
     if time_start:
-        a = a.filter(PublicCollection.temporal_extent_start <= time_start)
+        a = a.filter(
+            or_(PublicCollection.temporal_extent_start == None, PublicCollection.temporal_extent_start <= time_start))
     if time_end:
-        a = a.filter(PublicCollection.temporal_extent_end >= time_end)
-
+        a = a.filter(or_(PublicCollection.temporal_extent_end == None, PublicCollection.temporal_extent_end >= time_end
+                         ))
     data = a.all()
     # group data by parent_catalog parameter
     grouped_data = {}
@@ -548,3 +553,19 @@ def _run_ingestion_task_force_update(
         except ValueError:
             pass
     return responses_from_ingestion_microservice
+
+
+def remove_collection_from_public_catalog(catalog_id: int, collection_id: str):
+    """
+    Remove a collection from the public catalog.
+
+    :param catalog_id: Catalog id of the public catalog
+    :param collection_id: Collection id to remove from the public catalog
+    """
+    public_catalog = PublicCollection.query.filter_by(parent_catalog_id=catalog_id, collection_id=collection_id).first()
+
+    if public_catalog is None:
+        raise ValueError("No public catalog found with id: " + str(catalog_id))
+    public_catalog.remove_collection(collection_id)
+    db.session.commit()
+    stac_service.remove_public_collection_by_id_on_stac_api(collection_id)
