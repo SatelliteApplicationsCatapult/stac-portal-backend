@@ -4,7 +4,7 @@ from flask_restx import Namespace, fields
 from werkzeug.datastructures import FileStorage
 
 
-class CollectionsDto:
+class PrivateCatalogDto:
     api = Namespace("private_catalog", description="private catalog related operations")
     collection = api.model(
         "collections",
@@ -14,6 +14,22 @@ class CollectionsDto:
             ),
             "item_id": fields.String(required=True, description="item status_id"),
         },
+    )
+
+    collection_search = api.model(
+        "collection_search_private",
+        {
+            "bbox": fields.List(
+                fields.Float,
+                required=True,
+                description="bounding box of the area to be ingested",
+                example=[-1, 50, 1, 51],
+            ),
+            "datetime": fields.String(
+                required=True,
+                description="datetime of the area to be ingested",
+                example="2021-05-05T00:00:00Z/2022-05-05T00:00:00Z",
+            )},
     )
     collection_dto = api.model(
         "collection_dto",

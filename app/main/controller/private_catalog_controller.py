@@ -6,16 +6,28 @@ from flask_restx import Resource
 from ..custom_exceptions import *
 from ..service import private_catalog_service
 from ..service import stac_service
-from ..util.dto import CollectionsDto
+from ..util.dto import PrivateCatalogDto
 
-api = CollectionsDto.api
-collections = CollectionsDto.collection
+api = PrivateCatalogDto.api
+collections = PrivateCatalogDto.collection
+
+
+@api.route("/collections/search")
+@api.expect(PrivateCatalogDto.collection_search, validate=True)
+class Collections(Resource):
+    @api.doc(description='Search for collections in all catalogs')
+    @api.response(200, 'Success')
+    def post(self):
+        spatial_extent: list[float] = request.json['bbox']
+        temporal_extent: str = request.json['datetime']
+        return (private_catalog_service.find_all_collections(spatial_extent, temporal_extent,
+                                                             )), 200
 
 
 @api.route("/collections")
 class CollectionsList(Resource):
     @api.doc(description="Create a new private collection")
-    @api.expect(CollectionsDto.collection_dto, validate=True)
+    @api.expect(PrivateCatalogDto.collection_dto, validate=True)
     @api.response(200, "Success")
     @api.response(400, "Validation Error")
     def post(self):
@@ -31,7 +43,7 @@ class CollectionsList(Resource):
                    }, 400
 
     @api.doc(description="Update a private collection")
-    @api.expect(CollectionsDto.collection_dto, validate=True)
+    @api.expect(PrivateCatalogDto.collection_dto, validate=True)
     @api.response(200, "Success")
     @api.response(400, "Validation Error")
     @api.response(404, "Collection not found")
@@ -70,7 +82,7 @@ class CollectionItems(Resource):
     @api.response(200, "Success")
     @api.response(403, "Unauthorized.")
     @api.response("4xx", "Stac API reported error")
-    @api.expect(CollectionsDto.item_dto, validate=True)
+    @api.expect(PrivateCatalogDto.item_dto, validate=True)
     def post(self, collection_id):
         try:
             return stac_service.add_item_to_collection_on_stac_api(collection_id, request.json)
@@ -94,7 +106,7 @@ class CollectionItem(Resource):
     @api.doc(description="Update item in private collection")
     @api.response(200, "Success")
     @api.response(403, "Unauthorized.")
-    @api.expect(CollectionsDto.item_dto, validate=True)
+    @api.expect(PrivateCatalogDto.item_dto, validate=True)
     def put(self, collection_id: str, item_id: str):
         try:
             return stac_service.update_item_in_collection_on_stac_api(collection_id, item_id, request.json), 200

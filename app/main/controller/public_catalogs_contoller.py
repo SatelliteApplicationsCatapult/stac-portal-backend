@@ -57,7 +57,7 @@ class PublicCatalogsUpdate(Resource):
                }, 200
 
 
-@api.route("/collections")
+@api.route("/collections/search")
 class PublicCatalogsCollections(Resource):
     @api.doc(description='Get all collections of all public catalogs')
     @api.response(200, 'Success')
@@ -69,7 +69,7 @@ class PublicCatalogsCollections(Resource):
                                                              )), 200
 
 
-@api.route("/<int:public_catalog_id>/collections")
+@api.route("/<int:public_catalog_id>/collections/search")
 class SpecificPublicCatalogCollections(Resource):
     @api.doc(description="Get all collections for specified public catalog")
     @api.response(200, "Success")
