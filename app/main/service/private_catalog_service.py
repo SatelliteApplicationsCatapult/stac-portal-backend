@@ -4,7 +4,7 @@ from typing import Dict
 import geoalchemy2
 from shapely.geometry import box, MultiPolygon
 
-from .stac_service import update_existing_collection_on_stac_api, create_new_collection_on_stac_api
+from .stac_service import update_existing_collection_on_stac_api, create_new_collection_on_stac_api, remove_private_collection_by_id_on_stac_api
 from .. import db
 from ..custom_exceptions import *
 from ..model.private_catalog_model import PrivateCollection
@@ -102,5 +102,11 @@ def update_collection(collection: Dict[str, any]) -> Dict[str, any]:
         raise InvalidCollectionPayloadError
 
 
-
-
+def remove_collection(collection_id: str) -> Dict[str, any]:
+    if not _does_collection_exist_in_database(collection_id):
+        raise PrivateCollectionDoesNotExistError
+    private_collection = PrivateCollection.query.filter_by(id=collection_id).first()
+    db.session.delete(private_collection)
+    db.session.commit()
+    remove_private_collection_by_id_on_stac_api(collection_id)
+    return {"status": "success"}

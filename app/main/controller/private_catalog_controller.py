@@ -54,10 +54,15 @@ class CollectionsList(Resource):
 class Collection(Resource):
     @api.doc(description="Remove private collection by id")
     @api.response(200, "Collection removed successfully.")
-    @api.response(403, "Unauthorized.")
-    @api.response("4xx", "Stac API reported error")
+    @api.response(404, "Collection not found")
     def delete(self, collection_id: str) -> Tuple[Dict[str, str], int]:
-        return _remove_collection_by_id_on_stac_api(collection_id)
+        try:
+            return remove_collection(collection_id), 200
+        except PrivateCollectionDoesNotExistError as e:
+            return {
+                       "message": "Collection with this ID not found",
+                   }, 404
+
 
 
 @api.route("/collections/<collection_id>/items")

@@ -148,8 +148,8 @@ def update_existing_collection_on_stac_api(
         raise PrivateCollectionDoesNotExistError
 
 
-def remove_collection_by_id_on_stac_api(
-        collection_id: str) -> Tuple[Dict[str, any], int] or Response:
+def remove_public_collection_by_id_on_stac_api(
+        collection_id: str) -> Dict[str, any]:
     """Remove a collection by ID from the STAC API server.
 
     Additionally, removes all stored search parameters associated with the collection.
@@ -163,14 +163,23 @@ def remove_collection_by_id_on_stac_api(
         collection_id)
     if response.status_code in range(200, 203):
         collection_json = response.json()
-        return {
-                   "parameters": collection_json,
-                   "search_parameters_removed": search_parameters_removed,
-                   "status": "success",
-               }, response.status_code
+        return collection_json
+    elif response.status_code == 400:
+        raise InvalidCollectionPayloadError
+    elif response.status_code == 404:
+        raise PrivateCollectionDoesNotExistError
 
-    else:
-        return send_error_response(response)
+
+def remove_private_collection_by_id_on_stac_api(collection_id: str) -> Dict[str, any]:
+    response = requests.delete(route("COLLECTIONS") + collection_id)
+    if response.status_code in range(200, 203):
+        collection_json = response.json()
+        return collection_json
+    elif response.status_code == 400:
+        raise InvalidCollectionPayloadError
+    elif response.status_code == 404:
+        raise PrivateCollectionDoesNotExistError
+    pass
 
 
 def add_item_to_collection_on_stac_api(
@@ -245,5 +254,3 @@ def remove_item_from_collection_on_stac_api(
                         response.headers.items())
     else:
         return send_error_response(response)
-
-
