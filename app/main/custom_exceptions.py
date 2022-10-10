@@ -22,7 +22,11 @@ class TemporalExtentError(Error):
     pass
 
 
-class PrivateCollectionAlreadyExistsError(Error):
+class CollectionAlreadyExistsError(Error):
+    pass
+
+
+class PrivateCollectionAlreadyExistsError(CollectionAlreadyExistsError):
     pass
 
 
@@ -30,5 +34,18 @@ class InvalidCollectionPayloadError(Error):
     pass
 
 
-class PrivateCollectionDoesNotExistError(Error):
+class CollectionDoesNotExistError(Error):
+    pass
+
+
+class PrivateCollectionDoesNotExistError(CollectionDoesNotExistError):
+    pass
+
+class ItemAlreadyExistsError(Error):
+    pass
+class PrivateItemAlreadyExistsError(ItemAlreadyExistsError):
+    pass
+
+
+class ItemDoesNotExistError(Error):
     pass

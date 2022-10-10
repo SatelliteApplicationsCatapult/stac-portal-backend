@@ -57,7 +57,7 @@ def add_collection(collection: Dict[str, any]) -> Dict[str, any]:
             status = create_new_collection_on_stac_api(collection)
             db.session.commit()
             return status
-        except PrivateCollectionAlreadyExistsError:
+        except CollectionAlreadyExistsError:
             # it doesnt exist in database, but is present on stac server, store it in database
             # and update on stac-fastapi
             status = update_existing_collection_on_stac_api(collection)

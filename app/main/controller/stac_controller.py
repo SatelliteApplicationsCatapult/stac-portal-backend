@@ -25,7 +25,10 @@ class Collection(Resource):
     @api.response(403, "Unauthorized")
     @api.response("4xx", "Stac API reported error")
     def get(self, collection_id: str) -> Tuple[Dict[str, str], int]:
-        return get_collection_by_id(collection_id)
+        try:
+            return get_collection_by_id(collection_id),200
+        except CollectionDoesNotExistError:
+            ...
 
 
 @api.route("/<collection_id>/items")
@@ -33,11 +36,11 @@ class CollectionItems(Resource):
 
     @api.doc(description="get_collection_items")
     @api.response(200, "Success")
-    @api.response(403, "Unauthorized.")
-    @api.response("4xx", "Stac API reported error")
     def get(self, collection_id: str) -> Tuple[Dict[str, str], int]:
-        return get_items_by_collection_id(collection_id)
-
+        try:
+            return get_items_by_collection_id(collection_id),200
+        except CollectionDoesNotExistError:
+            ...
 
 @api.route("/<collection_id>/items/<item_id>")
 class CollectionItem(Resource):
@@ -48,4 +51,16 @@ class CollectionItem(Resource):
     @api.response("4xx", "Stac API reported error")
     def get(self, collection_id: str,
             item_id: str) -> Tuple[Dict[str, str], int]:
-        return get_item_from_collection(collection_id, item_id)
+        try:
+            return get_item_from_collection(collection_id, item_id),200
+        except ItemDoesNotExistError:
+            return {
+                       "message": "Item with this ID not found",
+                   }, 404
+        except CollectionDoesNotExistError:
+            return {
+                       "message": "Collection with this ID not found",
+                   }, 404
+
+
+
