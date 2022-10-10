@@ -3,6 +3,9 @@ from typing import Dict, Tuple
 import requests
 from flask import Response
 
+from . import public_catalogs_service
+from ..custom_exceptions import InvalidCollectionPayloadError, PrivateCollectionDoesNotExistError, \
+    PrivateCollectionAlreadyExistsError
 from ..routes import route
 
 
@@ -23,7 +26,7 @@ def get_all_collections() -> Tuple[Dict[str, any], int] or Response:
                }, response.status_code
 
     else:
-        return _send_error_response(response)
+        return send_error_response(response)
 
 
 def _send_error_response(
@@ -65,7 +68,7 @@ def get_collection_by_id(
                }, response.status_code
 
     else:
-        return _send_error_response(response)
+        return send_error_response(response)
 
 
 def get_items_by_collection_id(
@@ -85,7 +88,7 @@ def get_items_by_collection_id(
                }, response.status_code
 
     else:
-        return _send_error_response(response)
+        return send_error_response(response)
 
 
 def get_item_from_collection(
@@ -102,4 +105,145 @@ def get_item_from_collection(
                }, response.status_code
 
     else:
-        return _send_error_response(response)
+        return send_error_response(response)
+
+
+def create_new_collection_on_stac_api(
+        collection_data: Dict[str,
+                              any]) -> dict[str, any]:
+    """Create a new collection on the STAC API server.
+
+    :param collection_data: Collection data to create.
+    :return: Either a tuple containing stac server response and status code, or a Response object.
+    """
+    response = requests.post(route("COLLECTIONS"), json=collection_data)
+
+    if response.status_code in range(200, 203):
+        collection_json = response.json()
+        return collection_json
+
+    elif response.status_code == 409:
+        raise PrivateCollectionAlreadyExistsError
+
+    elif response.status_code == 400:
+        raise InvalidCollectionPayloadError
+
+
+def update_existing_collection_on_stac_api(
+        collection_data: Dict[str,
+                              any]) -> dict[str, any]:
+    """Update an existing collection on the STAC API server.
+
+    :param collection_data: Collection data to create.
+    :return: Either a tuple containing stac server response and status code, or a Response object.
+    """
+    response = requests.put(route("COLLECTIONS"), json=collection_data)
+
+    if response.status_code in range(200, 203):
+        collection_json = response.json()
+        return collection_json
+    elif response.status_code == 400:
+        raise InvalidCollectionPayloadError
+    elif response.status_code == 404:
+        raise PrivateCollectionDoesNotExistError
+
+
+def remove_collection_by_id_on_stac_api(
+        collection_id: str) -> Tuple[Dict[str, any], int] or Response:
+    """Remove a collection by ID from the STAC API server.
+
+    Additionally, removes all stored search parameters associated with the collection.
+
+
+    :param collection_id: Collection ID to remove.
+    :return: Either a tuple containing stac server response and status code, or a Response object.
+    """
+    response = requests.delete(route("COLLECTIONS") + collection_id)
+    search_parameters_removed = public_catalogs_service.remove_search_params_for_collection_id(
+        collection_id)
+    if response.status_code in range(200, 203):
+        collection_json = response.json()
+        return {
+                   "parameters": collection_json,
+                   "search_parameters_removed": search_parameters_removed,
+                   "status": "success",
+               }, response.status_code
+
+    else:
+        return send_error_response(response)
+
+
+def add_item_to_collection_on_stac_api(
+        collection_id: str,
+        item_data: Dict[str, any]) -> Tuple[Dict[str, any], int] or Response:
+    """Add an item to a collection on the STAC API server.
+
+    :param collection_id: Collection data to create.
+    :param item_data: Item data to store
+    :return: Either a tuple containing stac server response and status code, or a Response object.
+    """
+    response = requests.post(route("COLLECTIONS") + collection_id + "/items",
+                             json=item_data)
+
+    if response.status_code in range(200, 203):
+        collection_json = response.json()
+        return {
+                   "parameters": collection_json,
+                   "status": "success",
+               }, response.status_code
+
+    else:
+        return send_error_response(response)
+
+
+def _update_item_in_collection_on_stac_api(
+        collection_id: str, item_id: str,
+        item_data: Dict[str, any]) -> Tuple[Dict[str, any], int] or Response:
+    """Update an item in a collection on the STAC API server.
+
+    :param collection_id: Collection data to create.
+    :param item_id: Id of the item to update
+    :param item_data: Item data to store
+    :return: Either a tuple containing stac server response and status code, or a Response object.
+    """
+    response = requests.put(route("COLLECTIONS") + collection_id + "/items/" +
+                            item_id,
+                            json=item_data)
+
+    if response.status_code in range(200, 203):
+        collection_json = response.json()
+        return {
+                   "parameters": collection_json,
+                   "status": "success",
+               }, response.status_code
+
+    else:
+        return send_error_response(response)
+
+
+def remove_item_from_collection_on_stac_api(
+        collection_id: str,
+        item_id: str) -> Tuple[Dict[str, any], int] or Response:
+    """Remove an item from a collection on the STAC API server.
+
+    :param collection_id: Collection data to create.
+    :param item_id: Id of the item to remove
+    :return: Either a tuple containing stac server response and status code, or a Response object.
+    """
+    response = requests.delete(
+        route("COLLECTIONS") + collection_id + "/items/" + item_id)
+
+    if response.status_code in range(200, 203):
+        collection_json = response.json()
+        return {
+                   "parameters": collection_json,
+                   "status": "success",
+               }, response.status_code
+
+    if response.status_code == 403:
+        return Response(response.text, response.status_code,
+                        response.headers.items())
+    else:
+        return send_error_response(response)
+
+

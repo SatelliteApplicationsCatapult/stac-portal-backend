@@ -138,9 +138,9 @@ def _store_collections(public_catalog_entry: PublicCatalog) -> int:
                 public_collection.description = None
             start_time_string = collection['extent']['temporal']['interval'][0][0]
             end_time_string = collection['extent']['temporal']['interval'][0][1]
-            public_collection.temporal_extent_start = process_timestamp.process_timestamp_from_interval(
+            public_collection.temporal_extent_start = process_timestamp.process_timestamp_single_string(
                 start_time_string)
-            public_collection.temporal_extent_end = process_timestamp.process_timestamp_from_interval(end_time_string)
+            public_collection.temporal_extent_end = process_timestamp.process_timestamp_single_string(end_time_string)
             bboxes = collection['extent']['spatial']['bbox']
             shapely_boxes = []
             for i in range(0, len(bboxes)):
@@ -196,7 +196,7 @@ def find_all_collections(bbox: shapely.geometry.polygon.Polygon or list[float], 
         f"SRID=4326;{bbox.wkt}"))
     if public_catalog_id:
         a = a.filter(PublicCollection.parent_catalog == public_catalog_id)
-    time_start, time_end = process_timestamp.process_timestamp(time_interval_timestamp)
+    time_start, time_end = process_timestamp.process_timestamp_dual_string(time_interval_timestamp)
     if time_start:
         a = a.filter(PublicCollection.temporal_extent_start <= time_start)
     if time_end:

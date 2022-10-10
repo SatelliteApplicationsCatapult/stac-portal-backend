@@ -3,7 +3,7 @@ import datetime
 from app.main.custom_exceptions import ConvertingTimestampError
 
 
-def process_timestamp(timestamp: str):
+def process_timestamp_dual_string(timestamp: str):
     """
     Process a timestamp string into a tuple of datetime objects.
     """
@@ -37,7 +37,7 @@ def process_timestamp(timestamp: str):
     return start_timestamp_datetime, end_timestamp_datetime
 
 
-def process_timestamp_from_interval(timestamp: str) -> datetime:
+def process_timestamp_single_string(timestamp: str) -> datetime:
     """
     Process a timestamp string into a datetime object.
     """
