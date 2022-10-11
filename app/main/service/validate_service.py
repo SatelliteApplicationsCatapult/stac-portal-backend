@@ -3,8 +3,6 @@ from typing import Dict, Any
 import requests
 from flask import current_app
 
-from ..util.get_ip_from_cird_range import get_ip_from_cird_range
-
 
 def validate_json(data: Dict[str, Any]) -> tuple[str, int]:
     """Validate JSON."""

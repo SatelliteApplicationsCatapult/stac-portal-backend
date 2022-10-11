@@ -1,5 +1,4 @@
 import sqlalchemy
-from flask import request
 from flask_restx import Resource
 
 from ..service import status_reporting_service

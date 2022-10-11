@@ -1,169 +1,141 @@
-from typing import Dict, Tuple
+from typing import Dict
 
-import requests
-from flask import Response
+import geoalchemy2
+import shapely
+from shapely.geometry import box, MultiPolygon
+from sqlalchemy import or_
 
-from app.main.service import public_catalogs_service
-from ..routes import route
+from .stac_service import update_existing_collection_on_stac_api, create_new_collection_on_stac_api, \
+    remove_private_collection_by_id_on_stac_api
+from .. import db
+from ..custom_exceptions import *
+from ..model.private_catalog_model import PrivateCollection
+from ..util import process_timestamp
+from ..util.process_timestamp import *
 
 
-def create_new_collection(
-        collection_data: Dict[str,
-                              any]) -> Tuple[Dict[str, any], int] or Response:
-    """Create a new collection on the STAC API server.
+def _does_collection_exist_in_database(collection_id: str) -> bool:
+    """Check if a collection exists in the database.
 
-    :param collection_data: Collection data to create.
-    :return: Either a tuple containing stac server response and status code, or a Response object.
+    :param collection_id: Collection ID to check.
+    :return: True if collection exists, False otherwise.
     """
-    response = requests.post(route("COLLECTIONS"), json=collection_data)
-
-    if response.status_code in range(200, 203):
-        collection_json = response.json()
-        return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
-
-    else:
-        return _send_error_response(response)
+    return PrivateCollection.query.filter_by(id=collection_id).first() is not None
 
 
-def update_existing_collection(
-        collection_data: Dict[str,
-                              any]) -> Tuple[Dict[str, any], int] or Response:
-    """Update an existing collection on the STAC API server.
+def add_collection(collection: Dict[str, any]) -> Dict[str, any]:
+    collection_id = collection["id"]
+    if _does_collection_exist_in_database(collection_id):
+        raise PrivateCollectionAlreadyExistsError
 
-    :param collection_data: Collection data to create.
-    :return: Either a tuple containing stac server response and status code, or a Response object.
-    """
-    response = requests.put(route("COLLECTIONS"), json=collection_data)
+    if True:
+        private_collection = PrivateCollection()
+        private_collection.id = collection_id
+        try:
+            private_collection.type = collection['type']
+        except KeyError:
+            private_collection.type = "Collection"
+        try:
+            private_collection.title = collection['title']
+        except KeyError:
+            private_collection.title = None
+        try:
+            private_collection.description = collection['description']
+        except KeyError:
+            private_collection.description = None
 
-    if response.status_code in range(200, 203):
-        collection_json = response.json()
-        return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
-
-    else:
-        return _send_error_response(response)
-
-
-def remove_collection_by_id(
-        collection_id: str) -> Tuple[Dict[str, any], int] or Response:
-    """Remove a collection by ID from the STAC API server.
-
-    Additionally, removes all stored search parameters associated with the collection.
-
-
-    :param collection_id: Collection ID to remove.
-    :return: Either a tuple containing stac server response and status code, or a Response object.
-    """
-    response = requests.delete(route("COLLECTIONS") + collection_id)
-    search_parameters_removed = public_catalogs_service.remove_search_params_for_collection_id(
-        collection_id)
-    if response.status_code in range(200, 203):
-        collection_json = response.json()
-        return {
-                   "parameters": collection_json,
-                   "search_parameters_removed": search_parameters_removed,
-                   "status": "success",
-               }, response.status_code
-
-    else:
-        return _send_error_response(response)
-
-
-def add_item_to_collection(
-        collection_id: str,
-        item_data: Dict[str, any]) -> Tuple[Dict[str, any], int] or Response:
-    """Add an item to a collection on the STAC API server.
-
-    :param collection_id: Collection data to create.
-    :param item_data: Item data to store
-    :return: Either a tuple containing stac server response and status code, or a Response object.
-    """
-    response = requests.post(route("COLLECTIONS") + collection_id + "/items",
-                             json=item_data)
-
-    if response.status_code in range(200, 203):
-        collection_json = response.json()
-        return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
-
-    else:
-        return _send_error_response(response)
+        bboxes = collection['extent']['spatial']['bbox']
+        shapely_boxes = []
+        for i in range(0, len(bboxes)):
+            shapely_box = box(*(collection['extent']['spatial']['bbox'][i]))
+            shapely_boxes.append(shapely_box)
+        shapely_multi_polygon = geoalchemy2.shape.from_shape(MultiPolygon(shapely_boxes), srid=4326)
+        private_collection.spatial_extent = shapely_multi_polygon
+        temporal_extent_start = collection['extent']['temporal']['interval'][0][0]
+        temporal_extent_end = collection['extent']['temporal']['interval'][0][1]
+        private_collection.temporal_extent_start = process_timestamp_single_string(temporal_extent_start)
+        private_collection.temporal_extent_end = process_timestamp_single_string(temporal_extent_end)
+        db.session.add(private_collection)
+        try:
+            status = create_new_collection_on_stac_api(collection)
+            db.session.commit()
+            return status
+        except CollectionAlreadyExistsError:
+            # it doesnt exist in database, but is present on stac server, store it in database
+            # and update on stac-fastapi
+            status = update_existing_collection_on_stac_api(collection)
+            db.session.commit()
+            return status
+        except InvalidCollectionPayloadError:
+            db.session.rollback()
+            raise InvalidCollectionPayloadError
 
 
-def update_item_in_collection(
-        collection_id: str, item_id: str,
-        item_data: Dict[str, any]) -> Tuple[Dict[str, any], int] or Response:
-    """Update an item in a collection on the STAC API server.
-
-    :param collection_id: Collection data to create.
-    :param item_id: Id of the item to update
-    :param item_data: Item data to store
-    :return: Either a tuple containing stac server response and status code, or a Response object.
-    """
-    response = requests.put(route("COLLECTIONS") + collection_id + "/items/" +
-                            item_id,
-                            json=item_data)
-
-    if response.status_code in range(200, 203):
-        collection_json = response.json()
-        return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
-
-    else:
-        return _send_error_response(response)
-
-
-def remove_item_from_collection(
-        collection_id: str,
-        item_id: str) -> Tuple[Dict[str, any], int] or Response:
-    """Remove an item from a collection on the STAC API server.
-
-    :param collection_id: Collection data to create.
-    :param item_id: Id of the item to remove
-    :return: Either a tuple containing stac server response and status code, or a Response object.
-    """
-    response = requests.delete(
-        route("COLLECTIONS") + collection_id + "/items/" + item_id)
-
-    if response.status_code in range(200, 203):
-        collection_json = response.json()
-        return {
-                   "parameters": collection_json,
-                   "status": "success",
-               }, response.status_code
-
-    if response.status_code == 403:
-        return Response(response.text, response.status_code,
-                        response.headers.items())
-    else:
-        return _send_error_response(response)
+def update_collection(collection: Dict[str, any]) -> Dict[str, any]:
+    collection_id = collection["id"]
+    if not _does_collection_exist_in_database(collection_id):
+        raise PrivateCollectionDoesNotExistError
+    private_collection = PrivateCollection.query.filter_by(id=collection_id).first()
+    try:
+        private_collection.title = collection['title']
+    except KeyError:
+        pass
+    private_collection.description = collection['description']
+    bboxes = collection['extent']['spatial']['bbox']
+    shapely_boxes = []
+    for i in range(0, len(bboxes)):
+        shapely_box = box(*(collection['extent']['spatial']['bbox'][i]))
+        shapely_boxes.append(shapely_box)
+    shapely_multi_polygon = geoalchemy2.shape.from_shape(MultiPolygon(shapely_boxes), srid=4326)
+    private_collection.spatial_extent = shapely_multi_polygon
+    temporal_extent_start = collection['extent']['temporal']['interval'][0][0]
+    temporal_extent_end = collection['extent']['temporal']['interval'][0][1]
+    private_collection.temporal_extent_start = process_timestamp_single_string(temporal_extent_start)
+    private_collection.temporal_extent_end = process_timestamp_single_string(temporal_extent_end)
+    try:
+        status = update_existing_collection_on_stac_api(collection)
+        db.session.commit()
+        return status
+    except PrivateCollectionDoesNotExistError:
+        status = create_new_collection_on_stac_api(collection)
+        db.session.commit()
+        return status
+    except InvalidCollectionPayloadError:
+        db.session.rollback()
+        raise InvalidCollectionPayloadError
 
 
-def _send_error_response(
-        response: requests.models.Response
-) -> Tuple[Dict[str, any], int] or Response:
-    """Send an error response to the client.
+def remove_collection(collection_id: str) -> Dict[str, any]:
+    if not _does_collection_exist_in_database(collection_id):
+        raise PrivateCollectionDoesNotExistError
+    private_collection = PrivateCollection.query.filter_by(id=collection_id).first()
+    db.session.delete(private_collection)
+    db.session.commit()
+    remove_private_collection_by_id_on_stac_api(collection_id)
+    return {"status": "success"}
 
-    Returns either error message from stac-api server or a proxied error response.
 
-    :param response: Response object from the STAC API server.
-    :return: Tuple containing error message and status code.
-    """
-    if response.status_code == 403:
-        return Response(response.text, response.status_code,
-                        response.headers.items())
-    else:
-        return {
-                   "stac_api_server_response": response.json(),
-                   "stac_api_server_response_code": response.status_code,
-                   "status": "failed"
-               }, response.status_code
+def find_all_collections(bbox: shapely.geometry.polygon.Polygon or list[float], time_interval_timestamp: str,
+                         ) -> dict[str, any] or list[any]:
+    if isinstance(bbox, list):
+        bbox = shapely.geometry.box(*bbox)
+    a = db.session.query(PrivateCollection).filter(PrivateCollection.spatial_extent.ST_Intersects(
+        f"SRID=4326;{bbox.wkt}"))
+
+    time_start, time_end = process_timestamp.process_timestamp_dual_string(time_interval_timestamp)
+    print("Time start: " + str(time_start))
+    print("Time end: " + str(time_end))
+    if time_start:
+        a = a.filter(
+            or_(PrivateCollection.temporal_extent_start == None, PrivateCollection.temporal_extent_start <= time_start))
+    if time_end:
+        a = a.filter(
+            or_(PrivateCollection.temporal_extent_end == None, PrivateCollection.temporal_extent_end >= time_end
+                ))
+    data = a.all()
+    # group data by parent_catalog parameter
+    grouped_data = []
+    for item in data:
+        item: PrivateCollection
+        grouped_data.append(item.as_dict())
+    return grouped_data
