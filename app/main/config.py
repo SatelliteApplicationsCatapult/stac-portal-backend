@@ -17,9 +17,9 @@ class DevelopmentConfig(Config):
     ENV = "Dev"
     SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI",
                                         "postgresql://postgres:postgres@localhost:5432/postgres")
-    TARGET_STAC_API_SERVER = os.getenv('TARGET_STAC_API_SERVER', "http://localhost:8082")
+    TARGET_STAC_API_SERVER = os.getenv('TARGET_STAC_API_SERVER', "http://172.17.0.1:8082")
     STAC_VALIDATOR_ENDPOINT = os.getenv('STAC_VALIDATOR_ENDPOINT', "http://localhost:7000")
-    STAC_SELECTIVE_INGESTER_ENDPOINT = os.getenv('STAC_SELECTIVE_INGESTER_ENDPOINT', "http://localhost:7001")
+    STAC_SELECTIVE_INGESTER_ENDPOINT = os.getenv('STAC_SELECTIVE_INGESTER_ENDPOINT', "http://172.17.0.1:7001")
     GDAL_INFO_API_ENDPOINT = os.getenv('GDAL_INFO_API_ENDPOINT', "http://localhost:7002")
     AZURE_STORAGE_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING', "")
 
