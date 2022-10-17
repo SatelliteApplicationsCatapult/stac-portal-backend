@@ -1,8 +1,14 @@
 class Error(Exception):
     pass
 
+class StoredSearchParametersDoesNotExistError(Error):
+    pass
 
 class CatalogDoesNotExistError(Error):
+    pass
+
+
+class PublicCatalogDoesNotExistError(CatalogDoesNotExistError):
     pass
 
 

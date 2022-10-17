@@ -289,7 +289,12 @@ def get_all_stored_public_catalogs_as_list_of_dict() -> List[Dict[any, any]]:
     :return: Public catalogs as a list of dictionaries
     """
     a: [PublicCatalog] = PublicCatalog.query.all()
-    return [i.as_dict() for i in a]
+    data = []
+    for item in a:
+        x = item.as_dict()
+        x["stored_search_parameters"] = get_all_stored_search_parameters(item.id)
+        data.append(x)
+    return data
 
 
 def get_public_catalog_by_id_as_dict(public_catalog_id: int) -> Dict[any, any]:
@@ -572,3 +577,43 @@ def remove_collection_from_public_catalog(catalog_id: int, collection_id: str):
     except CollectionDoesNotExistError:
         pass
     return "Collection does not exist on STAC API"
+
+
+def get_all_stored_search_parameters(public_catalog_id: int = None) -> [Dict[any, any]]:
+    """
+    Get all stored search parameters.
+
+    :param public_catalog_id: Public catalog id to get stored search parameters for
+    :return: List of stored search parameters
+    """
+    public_catalog = PublicCatalog.query.filter_by(id=public_catalog_id).first()
+    if public_catalog is None:
+        raise PublicCatalogDoesNotExistError
+    if public_catalog_id is None:
+        data = StoredSearchParameters.query.all()
+        return_data = []
+        for i in data:
+            return_data.append(i.to_dict())
+    else:
+        data = StoredSearchParameters.query.filter_by(associated_catalog_id=public_catalog_id).all()
+        return [i.as_dict() for i in data]
+
+
+def run_search_parameters(parameter_id: int) -> int:
+    """
+    Run a search parameter.
+
+    :param parameter_id: Id of the search parameter to run
+    :return: Work session id
+    """
+    stored_search_parameters = StoredSearchParameters.query.filter_by(id=parameter_id).first()
+    if stored_search_parameters is None:
+        raise StoredSearchParametersDoesNotExistError
+    try:
+        used_search_parameters = json.loads(stored_search_parameters.used_search_parameters)
+        used_search_parameters["target_stac_catalog_url"] = current_app.config["TARGET_STAC_API_SERVER"]
+        used_search_parameters["update"] = True
+        microservice_response = _call_ingestion_microservice(used_search_parameters)
+        return microservice_response
+    except ValueError:
+        pass

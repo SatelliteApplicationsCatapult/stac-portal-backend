@@ -87,6 +87,20 @@ class SpecificPublicCatalogCollections(Resource):
                    }, 404
 
 
+@api.route("/<int:public_catalog_id>/load_history")
+class PublicCatalogLoadHistory(Resource):
+    @api.doc(description="Get load history for specified public catalog")
+    @api.response(200, "Success")
+    @api.response(404, "Not Found - Catalog does not exist")
+    def get(self, public_catalog_id):
+        try:
+            return public_catalogs_service.get_all_stored_search_parameters(public_catalog_id), 200
+        except PublicCatalogDoesNotExistError:
+            return {
+                       'message': 'Catalog with this id does not exist',
+                   }, 404
+
+
 @api.route("/<int:public_catalog_id>/collections/<string:collection_id>")
 class SpecificPublicCatalogCollection(Resource):
     @api.doc(description="Get specified collection for specified public catalog")
@@ -217,3 +231,16 @@ class UpdateStacRecordsSpecifyingPublicCatalogId(Resource):
                        'message':
                            'Connection Error, ingestion microservice is probably down'
                    }, 500
+
+
+@api.route('/run_search_parameters/<int:parameter_id>')
+class RunSearchParameters(Resource):
+    @api.doc(description="Run search parameters for specified public catalog")
+    @api.response(200, "Success")
+    def get(self, parameter_id):
+        try:
+            return public_catalogs_service.run_search_parameters(parameter_id), 200
+        except StoredSearchParametersDoesNotExistError:
+            return {
+                       'message': 'Search param with this id does not exist',
+                   }, 404
