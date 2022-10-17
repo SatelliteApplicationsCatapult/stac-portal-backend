@@ -70,11 +70,27 @@ class StoredSearchParameters(db.Model):
                                            index=True)
 
     def as_dict(self):
-        data = {'collection': self.collection,
-                'bbox': json.loads(self.bbox),
-                'used_search_parameters': json.loads(self.used_search_parameters),
-                'associated_catalog_id': self.associated_catalog_id,
-                'datetime': json.loads(self.datetime),
-                'id': self.id
-                }
+        # data = {'collection': self.collection,
+        #         'bbox': json.loads(self.bbox),
+        #         'used_search_parameters': json.loads(self.used_search_parameters),
+        #         'associated_catalog_id': self.associated_catalog_id,
+        #         'datetime': json.loads(self.datetime),
+        #         'id': self.id
+        #         }
+        data = {}
+        data["collection"] = self.collection
+        try:
+            data["bbox"] = json.loads(self.bbox)
+        except json.decoder.JSONDecodeError:
+            data["bbox"] = []
+        try:
+            data["datetime"] = json.loads(self.datetime)
+        except json.decoder.JSONDecodeError:
+            data["datetime"] = ""
+        try:
+            data["used_search_parameters"] = json.loads(self.used_search_parameters)
+        except json.decoder.JSONDecodeError:
+            data["used_search_parameters"] = ""
+        data["associated_catalog_id"] = self.associated_catalog_id
+        data["id"] = self.id
         return data
