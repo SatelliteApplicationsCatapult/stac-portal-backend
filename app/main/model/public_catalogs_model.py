@@ -1,4 +1,5 @@
 import datetime
+import json
 
 from .. import db
 from ..model.collection_model import Collection
@@ -67,3 +68,13 @@ class StoredSearchParameters(db.Model):
                                                          ondelete='CASCADE'),
                                            nullable=False,
                                            index=True)
+
+    def as_dict(self):
+        data = {'collection': self.collection,
+                'bbox': json.loads(self.bbox),
+                'used_search_parameters': json.loads(self.used_search_parameters),
+                'associated_catalog_id': self.associated_catalog_id,
+                'datetime': json.loads(self.datetime),
+                'id': self.id
+                }
+        return data
