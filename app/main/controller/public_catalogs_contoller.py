@@ -46,7 +46,7 @@ class PublicCatalogs(Resource):
         return {"message": "Deleted all catalogs"}, 200
 
 
-@api.route('/sync')
+@api.route('/sync/')
 class PublicCatalogsUpdate(Resource):
     @api.doc(description='Get all public catalogs and update them')
     @api.response(200, 'Success')
@@ -57,7 +57,7 @@ class PublicCatalogsUpdate(Resource):
                }, 200
 
 
-@api.route("/collections/search")
+@api.route("/collections/search/")
 class PublicCatalogsCollections(Resource):
     @api.doc(description='Get all collections of all public catalogs')
     @api.response(200, 'Success')
@@ -69,7 +69,7 @@ class PublicCatalogsCollections(Resource):
                                                              )), 200
 
 
-@api.route("/<int:public_catalog_id>/collections/search")
+@api.route("/<int:public_catalog_id>/collections/search/")
 class SpecificPublicCatalogCollections(Resource):
     @api.doc(description="Get all collections for specified public catalog")
     @api.response(200, "Success")
@@ -87,7 +87,7 @@ class SpecificPublicCatalogCollections(Resource):
                    }, 404
 
 
-@api.route("/<int:public_catalog_id>/load_history")
+@api.route("/<int:public_catalog_id>/load_history/")
 class PublicCatalogLoadHistory(Resource):
     @api.doc(description="Get load history for specified public catalog")
     @api.response(200, "Success")
@@ -101,7 +101,7 @@ class PublicCatalogLoadHistory(Resource):
                    }, 404
 
 
-@api.route("/<int:public_catalog_id>/collections/<string:collection_id>")
+@api.route("/<int:public_catalog_id>/collections/<string:collection_id>/")
 class SpecificPublicCatalogCollection(Resource):
     @api.doc(description="Get specified collection for specified public catalog")
     @api.response(200, "Success")
@@ -122,7 +122,7 @@ class SpecificPublicCatalogCollection(Resource):
                    }, 404
 
 
-@api.route('/<int:public_catalog_id>')
+@api.route('/<int:public_catalog_id>/')
 class PublicCatalogsViaId(Resource):
 
     @api.doc(description="""Get the details of a public catalog by its id.""")
@@ -147,7 +147,7 @@ class PublicCatalogsViaId(Resource):
             return {'message': 'No result found'}, 404
 
 
-@api.route('/<int:public_catalog_id>/items/get')
+@api.route('/<int:public_catalog_id>/items/get/')
 class GetStacRecordsSpecifyingPublicCatalogId(Resource):
 
     @api.doc(description="""Get specific collections from catalog.""")
@@ -167,7 +167,7 @@ class GetStacRecordsSpecifyingPublicCatalogId(Resource):
                    }, 500
 
 
-@api.route('/items/update')
+@api.route('/items/update/')
 class UpdateAllStacRecords(Resource):
 
     @api.doc(
@@ -188,7 +188,7 @@ class UpdateAllStacRecords(Resource):
                    }, 500
 
 
-@api.route('/<int:public_catalog_id>/items/update')
+@api.route('/<int:public_catalog_id>/items/update/')
 class UpdateStacRecordsSpecifyingPublicCatalogId(Resource):
 
     @api.doc(description="""Get all stac records from a public catalog.""")
@@ -233,7 +233,7 @@ class UpdateStacRecordsSpecifyingPublicCatalogId(Resource):
                    }, 500
 
 
-@api.route('/run_search_parameters/<int:parameter_id>')
+@api.route('/run_search_parameters/<int:parameter_id>/')
 class RunSearchParameters(Resource):
     @api.doc(description="Run search parameters for specified public catalog")
     @api.response(200, "Success")

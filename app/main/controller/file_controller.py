@@ -8,7 +8,7 @@ api = FileDto.api
 files_api = FilesDto.files_api
 
 
-@api.route("/blob_status")
+@api.route("/blob_status/")
 class CheckBlobStatus(Resource):
     @api.doc(description="Check the status of a blob upload")
     @api.response(200, "Success")
@@ -17,7 +17,7 @@ class CheckBlobStatus(Resource):
         return {"available": available, "message": message}, 200
 
 
-@api.route("/stac_assets/<item_id>/upload")
+@api.route("/stac_assets/<item_id>/upload/")
 class CommitStacAssets(Resource):
     @api.doc(description="Upload stac assets to the azure storage blob")
     @api.response(200, "Success")
@@ -37,7 +37,7 @@ class CommitStacAssets(Resource):
             return {"message": "File already exists"}, 409
 
 
-@api.route("/stac_assets/<item_id>/url")
+@api.route("/stac_assets/<item_id>/url/")
 class RetrieveStacAssets(Resource):
     @api.doc(description="Retrieve stac assets from the backend")
     @api.response(200, "Success")
@@ -52,7 +52,7 @@ class RetrieveStacAssets(Resource):
 
 
 # This takes multiple files and uploads them to the blob
-@api.route("/stac_assets/upload")
+@api.route("/stac_assets/upload/")
 class Upload(Resource):
     @files_api.doc(description="Upload stac assets to the azure storage blob")
     @files_api.response(200, "Success")

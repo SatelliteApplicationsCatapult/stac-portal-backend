@@ -10,7 +10,7 @@ api = ValidateDto.api
 validate = ValidateDto.validate
 
 
-@api.route("/json")
+@api.route("/json/")
 class ValidateJSON(Resource):
     """Validate JSON Resource."""
 

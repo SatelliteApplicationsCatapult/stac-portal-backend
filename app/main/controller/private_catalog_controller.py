@@ -12,7 +12,7 @@ api = PrivateCatalogDto.api
 collections = PrivateCatalogDto.collection
 
 
-@api.route("/collections/search")
+@api.route("/collections/search/")
 @api.expect(PrivateCatalogDto.collection_search, validate=True)
 class Collections(Resource):
     @api.doc(description='Search for collections in all catalogs')
@@ -24,7 +24,7 @@ class Collections(Resource):
                                                              )), 200
 
 
-@api.route("/collections")
+@api.route("/collections/")
 class CollectionsList(Resource):
     @api.doc(description="Create a new private collection")
     @api.expect(PrivateCatalogDto.collection_dto, validate=True)
@@ -61,7 +61,7 @@ class CollectionsList(Resource):
                    }, 400
 
 
-@api.route("/collections/<collection_id>")
+@api.route("/collections/<collection_id>/")
 class Collection(Resource):
     @api.doc(description="Remove private collection by id")
     @api.response(200, "Collection removed successfully.")
@@ -75,7 +75,7 @@ class Collection(Resource):
                    }, 404
 
 
-@api.route("/collections/<collection_id>/items")
+@api.route("/collections/<collection_id>/items/")
 class CollectionItems(Resource):
 
     @api.doc(description="Add item to private collection")
@@ -100,7 +100,7 @@ class CollectionItems(Resource):
                    }, 400
 
 
-@api.route("/collections/<collection_id>/items/<item_id>")
+@api.route("/collections/<collection_id>/items/<item_id>/")
 class CollectionItem(Resource):
 
     @api.doc(description="Update item in private collection")

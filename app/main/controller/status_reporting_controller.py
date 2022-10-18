@@ -7,7 +7,7 @@ from ..util.dto import StatusReportingDto
 api = StatusReportingDto.api
 
 
-@api.route('/loading_public_stac_records')
+@api.route('/loading_public_stac_records/')
 class StacIngestionStatus(Resource):
 
     @api.doc(description='Get all statuses of stac ingestion statuses')
@@ -15,7 +15,7 @@ class StacIngestionStatus(Resource):
         return status_reporting_service.get_all_stac_ingestion_statuses()
 
 
-@api.route('/loading_public_stac_records/<string:status_id>')
+@api.route('/loading_public_stac_records/<string:status_id>/')
 class StacIngestionStatusViaId(Resource):
 
     @api.doc(description='get a stac ingestion status via status_id')

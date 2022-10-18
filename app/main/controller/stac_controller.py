@@ -15,7 +15,7 @@ class CollectionsList(Resource):
         return get_all_collections(), 200
 
 
-@api.route("/<collection_id>")
+@api.route("/<collection_id>/")
 class Collection(Resource):
 
     @api.doc(description="get_collection")
@@ -30,7 +30,7 @@ class Collection(Resource):
                    }, 404
 
 
-@api.route("/<collection_id>/items")
+@api.route("/<collection_id>/items/")
 class CollectionItems(Resource):
 
     @api.doc(description="get_collection_items")
@@ -45,7 +45,7 @@ class CollectionItems(Resource):
                    }, 404
 
 
-@api.route("/<collection_id>/items/<item_id>")
+@api.route("/<collection_id>/items/<item_id>/")
 class CollectionItem(Resource):
 
     @api.doc(description="get_collection_item")
