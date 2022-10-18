@@ -61,13 +61,15 @@ def store_publicly_available_catalogs() -> Tuple[int, int]:
     filtered_response_result = [i for i in response_result if i['isPrivate'] == False and i['isApi'] == True]
     results = []
     work = []
-    pool = multiprocessing.Pool(processes=4)
+    # pool = multiprocessing.Pool(processes=4)
+    # for catalog in filtered_response_result:
+    #     work.append(
+    #         pool.apply_async(_store_catalog_and_collections, (catalog['title'], catalog['url'], catalog['summary'])))
+    # [work.wait() for work in work]
+    # for work in work:
+    #     results.append(work.get())
     for catalog in filtered_response_result:
-        work.append(
-            pool.apply_async(_store_catalog_and_collections, (catalog['title'], catalog['url'], catalog['summary'])))
-    [work.wait() for work in work]
-    for work in work:
-        results.append(work.get())
+        results.append(_store_catalog_and_collections(catalog['title'], catalog['url'], catalog['summary']))
     number_of_catalogs = len([i for i in results if i is not None])
     number_of_collections = sum([i for i in results if i is not None])
     return number_of_catalogs, number_of_collections
