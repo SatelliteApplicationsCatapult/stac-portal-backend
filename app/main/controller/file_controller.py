@@ -1,4 +1,3 @@
-from flask import request
 from flask_restx import Resource
 from werkzeug.utils import secure_filename
 
@@ -16,19 +15,6 @@ class CheckBlobStatus(Resource):
     def get(self):
         available, message = check_blob_status()
         return {"available": available, "message": message}, 200
-
-
-# @api.route("/stac_assets/<item_id>/stage")
-# class UploadStacAssets(Resource):
-#     @api.doc(description="Stage stac assets to the backend")
-#     # @api.expect(FileDto.file_upload, validate=True)
-#     @api.response(200, "Success")
-#     def post(self, item_id):
-#         try:
-#             response = stage_file(item_id, request.files["filename"])
-#             return {"message": response}, 200
-#         except FileExistsError:
-#             return {"message": "File already exists"}, 409
 
 
 @api.route("/stac_assets/<item_id>/upload")

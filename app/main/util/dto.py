@@ -4,7 +4,7 @@ from flask_restx import Namespace, fields
 from werkzeug.datastructures import FileStorage
 
 
-class CollectionsDto:
+class PrivateCatalogDto:
     api = Namespace("private_catalog", description="private catalog related operations")
     collection = api.model(
         "collections",
@@ -14,6 +14,22 @@ class CollectionsDto:
             ),
             "item_id": fields.String(required=True, description="item status_id"),
         },
+    )
+
+    collection_search = api.model(
+        "collection_search_private",
+        {
+            "bbox": fields.List(
+                fields.Float,
+                required=True,
+                description="bounding box of the area to be ingested",
+                example=[-1, 50, 1, 51],
+            ),
+            "datetime": fields.String(
+                required=True,
+                description="datetime of the area to be ingested",
+                example="2021-05-05T00:00:00Z/2022-05-05T00:00:00Z",
+            )},
     )
     collection_dto = api.model(
         "collection_dto",
@@ -42,17 +58,38 @@ class CollectionsDto:
                 api.model(
                     "extent",
                     {
-                        "spatial": fields.List(
-                            fields.Float,
+                        "spatial": fields.Nested(
+                            api.model(
+                                "spatial",
+                                {
+                                    "bbox": fields.List(
+                                        fields.List(fields.Float),
+                                        required=True,
+                                        description="bbox",
+                                        example=[[-180, -90, 180, 90]],
+                                    )
+                                },
+                            ),
                             required=True,
-                            description="spatial extent",
-                            example=[-180, -90, 180, 90],
+                            description="spatial",
                         ),
-                        "temporal": fields.List(
-                            fields.String,
-                            required=True,
-                            description="temporal extent",
-                            example=["2021-05-05T00:00:00Z/2022-05-05T00:00:00Z"],
+                        "temporal": fields.Nested(
+                            api.model(
+                                "temporal",
+                                {
+                                    "interval": fields.List(
+                                        fields.List(fields.String),
+                                        required=True,
+                                        description="interval",
+                                        example=[
+                                            [
+                                                "2021-05-05T00:00:00Z",
+                                                "2022-05-05T00:00:00Z",
+                                            ]
+                                        ],
+                                    ),
+                                },
+                            )
                         ),
                     },
                 ),
@@ -162,45 +199,9 @@ class PublicCatalogsDto:
             ),
         },
     )
-
-    get_public_collections = api.model(
-        "get_public_collections",
-        {
-            "extent": fields.Nested(
-                api.model(
-                    "extent",
-                    {
-                        "spatial": fields.List(
-                            fields.Float,
-                            required=True,
-                            description="spatial extent",
-                            example=[-180, -90, 180, 90],
-                        ),
-                        "temporal": fields.List(
-                            fields.String,
-                            required=False,
-                            description="temporal extent",
-                            example=["2021-05-05T00:00:00Z/2022-05-05T00:00:00Z"],
-                        ),
-                    },
-                ),
-                required=True,
-                description="spatial and temporal extent",
-            )
-        }
-    )
-
     start_stac_ingestion = api.model(
         "start_stac_ingestion",
-        {  # 'source_stac_catalog_url':
-            # fields.String(
-            #     required=True,
-            #     description='url of the source STAC catalog',
-            #     example="https://planetarycomputer.microsoft.com/api/stac/v1"),
-            # 'target_stac_catalog_url':
-            # fields.String(required=True,
-            #               description='url of the destination STAC catalog',
-            #               example="https://stac-api-server.azurewebsites.net"),
+        {
             "update": fields.Boolean(
                 required=True, description="update the destination catalog"
             ),
@@ -255,6 +256,21 @@ class PublicCatalogsDto:
                 example=["landsat-8-l1-c1", "sentinel-2-l1c", "landsat-c2-l2"],
             ),
         },
+    )
+    collection_search = api.model(
+        "collection_search",
+        {
+            "bbox": fields.List(
+                fields.Float,
+                required=False,
+                description="bounding box of the area to be ingested",
+                example=[-1, 50, 1, 51],
+            ),
+            "datetime": fields.String(
+                required=False,
+                description="datetime of the area to be ingested",
+                example="2021-05-05T00:00:00Z/2022-05-05T00:00:00Z",
+            )},
     )
 
 
@@ -332,3 +348,63 @@ class StacGeneratorDto:
         'stac_extensions': fields.List(fields.String, required=False, description='stac extensions', example=['eo']),
         'stac_collection': fields.String(required=False, description='stac collection', example='landsat-8-l1-c1'),
     })
+    item_search = api.model(
+        "item_search",
+        {
+            "collections": fields.List(
+                fields.String,
+                required=False,
+                default=[],
+                example=["landsat-8-l1-c1", "sentinel-2-l1c", "landsat-c2-l2"],
+            ),
+            "bbox": fields.List(
+                fields.Float,
+
+                required=False,
+                description="bounding box of the area to be ingested",
+                example=[-1, 50, 1, 51],
+            ),
+            "datetime": fields.String(
+                required=False,
+                description="datetime of the area to be ingested",
+                example="2021-05-05T00:00:00Z/2022-05-05T00:00:00Z",
+            ),
+            "ids": fields.List(
+                fields.String,
+                required=False,
+                default=[],
+                example=["LC08_L2SP_202024_20220810_20220812_02_T1_SR_B4"],
+            ),
+            "limit": fields.Integer(
+                required=False,
+                default=10,
+                description="maximum number of items to return",
+                example=10,
+            ),
+            "intersects": fields.String(
+                required=False,
+                description="geojson of the area to be ingested",
+                example="{}",
+            )},
+    )
+    collection_search = api.model(
+        "collection_search_2",
+        {
+            "collections": fields.List(
+                fields.String,
+                required=False,
+                default=[],
+                example=["landsat-8-l1-c1", "sentinel-2-l1c", "landsat-c2-l2"],
+            ),
+            "bbox": fields.List(
+                fields.Float,
+                required=False,
+                description="bounding box of the area to be ingested",
+                example=[-1, 50, 1, 51],
+            ),
+            "datetime": fields.String(
+                required=False,
+                description="datetime of the area to be ingested",
+                example="2021-05-05T00:00:00Z/2022-05-05T00:00:00Z",
+            )},
+    )

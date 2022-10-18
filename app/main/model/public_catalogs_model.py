@@ -1,10 +1,8 @@
 import datetime
-
-from geoalchemy2 import Geometry
-from geoalchemy2.shape import to_shape
-import shapely
+import json
 
 from .. import db
+from ..model.collection_model import Collection
 
 
 class PublicCatalog(db.Model):
@@ -39,32 +37,21 @@ class PublicCatalog(db.Model):
         return data
 
 
-class PublicCollection(db.Model):
+class PublicCollection(Collection):
     __tablename__ = "public_collections"
-    _id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    id = db.Column(db.Text, nullable=False)
-    type = db.Column(db.Text, nullable=False, default="Collection")
-    title = db.Column(db.Text, nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    temporal_extent_start = db.Column(db.DateTime, nullable=True, default=None)
-    temporal_extent_end = db.Column(db.DateTime, nullable=True, default=None)
-    spatial_extent = db.Column(Geometry(geometry_type="MULTIPOLYGON"), nullable=True, default=None)
+    __mapper_args__ = {
+        'polymorphic_identity': 'PublicCollection',
+    }
+    # _id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    # id = db.Column(db.Text, nullable=False)
+    # type = db.Column(db.Text, nullable=False, default="Collection")
+    # title = db.Column(db.Text, nullable=False)
+    # description = db.Column(db.Text, nullable=False)
+    # temporal_extent_start = db.Column(db.DateTime, nullable=True, default=None)
+    # temporal_extent_end = db.Column(db.DateTime, nullable=True, default=None)
+    # spatial_extent = db.Column(Geometry(geometry_type="MULTIPOLYGON"), nullable=True, default=None)
     parent_catalog = db.Column(db.Integer, db.ForeignKey("public_catalogs.id", ondelete='CASCADE'), nullable=False)
     __table_args__ = (db.UniqueConstraint('id', 'parent_catalog', name='_id_parent_catalog_uc'),)
-
-    def as_dict(self):
-        data = {
-            c.name: str(getattr(self, c.name))
-            for c in self.__table__.columns
-        }
-        # remove _id from data
-        data.pop("_id")
-        spatial_extent = data.pop("spatial_extent")
-        # convert spatial_extent to shapely
-        shape: shapely.geometry.polygon.Polygon = to_shape(self.spatial_extent)
-        data["spatial_extent_wkt"] = shape.wkt
-
-        return data
 
 
 class StoredSearchParameters(db.Model):
@@ -81,3 +68,29 @@ class StoredSearchParameters(db.Model):
                                                          ondelete='CASCADE'),
                                            nullable=False,
                                            index=True)
+
+    def as_dict(self):
+        # data = {'collection': self.collection,
+        #         'bbox': json.loads(self.bbox),
+        #         'used_search_parameters': json.loads(self.used_search_parameters),
+        #         'associated_catalog_id': self.associated_catalog_id,
+        #         'datetime': json.loads(self.datetime),
+        #         'id': self.id
+        #         }
+        data = {}
+        data["collection"] = self.collection
+        try:
+            data["bbox"] = json.loads(self.bbox)
+        except json.decoder.JSONDecodeError:
+            data["bbox"] = []
+        try:
+            data["datetime"] = json.loads(self.datetime)
+        except json.decoder.JSONDecodeError:
+            data["datetime"] = ""
+        try:
+            data["used_search_parameters"] = json.loads(self.used_search_parameters)
+        except json.decoder.JSONDecodeError:
+            data["used_search_parameters"] = ""
+        data["associated_catalog_id"] = self.associated_catalog_id
+        data["id"] = self.id
+        return data
