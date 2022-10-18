@@ -1,6 +1,6 @@
 from typing import Dict, Tuple
 
-from flask import request, jsonify
+from flask import request, jsonify, Response
 from flask_restx import Resource
 
 from ..service.validate_service import validate_json
@@ -16,7 +16,7 @@ class ValidateJSON(Resource):
 
     @api.doc("validate_json")
     @api.expect(validate)
-    def post(self) -> Tuple[Dict[str, str], int]:
+    def post(self) -> Response:
         """Validate JSON."""
         data = request.json
         return jsonify(validate_json(data=data))
