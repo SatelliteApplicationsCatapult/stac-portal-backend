@@ -50,6 +50,7 @@ class CommitStacAssets(Resource):
         except FileExistsError:
             return {"message": "File already exists"}, 409
 
+
 @api.route("/stac_assets/<item_id>/url")
 class RetrieveStacAssets(Resource):
     @api.doc(description="Retrieve stac assets from the backend")
@@ -57,11 +58,12 @@ class RetrieveStacAssets(Resource):
     @api.response(404, "Item not found")
     def get(self, item_id):
         try:
-            file_url = retrieve_file_url(item_id)
-            response = parse_file_json(file_url)
+            file_url = return_file_url(item_id)
+            response = retrieve_file(file_url)
             return {"message": response}, 200
         except FileNotFoundError:
             return {"message": "File not found"}, 404
+
 
 # This takes multiple files and uploads them to the blob
 @api.route("/stac_assets/upload")
@@ -72,7 +74,7 @@ class Upload(Resource):
     @files_api.expect(FilesDto.files_upload, validate=True)
     def post(self):
         try:
-            item_ids = request.form['itemIds'].split(',')
+            item_ids = request.form["itemIds"].split(",")
         except:
             return {"message": "No item ids provided"}, 400
 
@@ -85,9 +87,12 @@ class Upload(Resource):
                 if item_id not in filename:
                     filename = f"{item_id}_{filename}"
                 try:
-                    print('uploading file')
-                    # upload_filestream_to_blob(filename, file)
+                    upload_filestream_to_blob(filename, file)
                 except FileExistsError:
-                    return {"message": "File already exists"}, 409
+                    return {"message": "Success"}, 200
+                except Exception as e:
+                    # Log error
+                    print(e)
+                    return {"message": "Error uploading file"}, 400
 
         return {"message": "Success"}, 200

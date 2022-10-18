@@ -1,10 +1,11 @@
+import re
 from datetime import datetime
 
 import pystac
+from pyproj import CRS
 from rasterio.warp import transform_bounds
 from shapely.geometry import Polygon
-from pyproj import CRS
-import re
+
 
 def create_STAC_Item(metadata):
     # EPSG (Source and destination)
@@ -75,8 +76,10 @@ def create_STAC_Item(metadata):
 
     item.set_self_href("item.json")
 
-    item.validate()
-    item_json = item.save_object()
+    # item.validate()
+    item.save_object()
+
+    item_json = item.to_dict()
     return item_json
 
 
@@ -134,14 +137,12 @@ def return_bbox_from_coordinates(geom, src_crs, destination_crs):
 
 def planet_stac_parser(properties, metadata):
     """Parse Planet STAC metadata"""
-    print("Parsing Planet STAC metadata")
     planet_properties = metadata["properties"]
     if planet_properties.get("gsd"):
         properties["gsd"] = planet_properties["gsd"]
-    
+
     # EO Additions
     if planet_properties.get("cloud_cover") != None:
-        print('YO')
         properties["eo:cloud_cover"] = planet_properties["cloud_cover"]
 
     # View Additions
