@@ -311,6 +311,11 @@ class FileDto:
     file_upload = api.parser()
     file_upload.add_argument("file", location="files", type=FileStorage, required=True)
 
+class FilesDto:
+    files_api = Namespace('files', description='File upload related operations')
+    files_upload = files_api.parser()
+    files_upload.add_argument('files', location='files', type=FileStorage, required=True, action='append')
+    
 
 class GdalInfoDto:
     api = Namespace("gdal_info", description="gdalinfo related operations")
@@ -328,6 +333,21 @@ class GdalInfoDto:
 
 class StacDto:
     api = Namespace("stac", description="stac related operations")
+    api = Namespace('gdal_info', description='gdalinfo related operations')
+    get_gdal_info = api.model('gdalinfo', {
+        'file_url': fields.String(required=True, description='url of the file to get the stac info for',
+                                  example="https://ctpltstacstrgdev.blob.core.windows.net/stac-items/LC09_L2SP_202024_20220810_20220812_02_T1_SR_B4.tiff"),
+    })
+
+class StacGeneratorDto:
+    api = Namespace('stac_generator', description='stac generator related operations')
+    # Takes an array of metadata JSON
+    stac_generator = api.model('stac_generator', {
+        'metadata': fields.List(fields.String, required=True, description='metadata json'),
+        'stac_version': fields.String(required=False, description='stac version', example='1.0.0'),
+        'stac_extensions': fields.List(fields.String, required=False, description='stac extensions', example=['eo']),
+        'stac_collection': fields.String(required=False, description='stac collection', example='landsat-8-l1-c1'),
+    })
     item_search = api.model(
         "item_search",
         {

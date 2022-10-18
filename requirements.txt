@@ -52,3 +52,7 @@ urllib3==1.26.12
 Werkzeug==2.1.2
 wrapt==1.14.1
 zipp==3.8.1
+xmltodict
+pystac
+pyproj
+rasterio
