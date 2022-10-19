@@ -8,7 +8,6 @@ api = StacDto.api
 
 @api.route("/")
 class CollectionsList(Resource):
-
     @api.doc(description="List all collections on the stac-api server")
     @api.response(200, "Success")
     def get(self):
@@ -17,7 +16,6 @@ class CollectionsList(Resource):
 
 @api.route("/<collection_id>/")
 class Collection(Resource):
-
     @api.doc(description="get_collection")
     @api.response(200, "Success")
     @api.response(404, "Collection not found")

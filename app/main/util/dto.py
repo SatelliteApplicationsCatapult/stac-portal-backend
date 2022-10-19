@@ -333,11 +333,7 @@ class GdalInfoDto:
 
 class StacDto:
     api = Namespace("stac", description="stac related operations")
-    api = Namespace('gdal_info', description='gdalinfo related operations')
-    get_gdal_info = api.model('gdalinfo', {
-        'file_url': fields.String(required=True, description='url of the file to get the stac info for',
-                                  example="https://ctpltstacstrgdev.blob.core.windows.net/stac-items/LC09_L2SP_202024_20220810_20220812_02_T1_SR_B4.tiff"),
-    })
+
 
 class StacGeneratorDto:
     api = Namespace('stac_generator', description='stac generator related operations')

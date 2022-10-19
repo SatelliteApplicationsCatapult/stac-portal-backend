@@ -25,5 +25,6 @@ api.add_namespace(public_catalogs_ns, path='/public_catalogs')
 api.add_namespace(status_controller_ns, path='/status_reporting')
 api.add_namespace(file_ns, path='/file')
 api.add_namespace(gdal_info_ns, path='/gdal_info')
-api.add_namespace(stac_ns, path='/stac')
 api.add_namespace(stac_generator_ns, path='/stac_generator')
+api.add_namespace(stac_ns, path='/stac')
+
