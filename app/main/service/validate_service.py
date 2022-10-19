@@ -13,7 +13,7 @@ def validate_json(data: Dict[str, Any]) -> tuple[str, int]:
         validate_endpoint = f"{STAC_VALIDATOR_ENDPOINT}"
         response = requests.post(
             validate_endpoint, json=data, timeout=120)
-        return response.text, response.status_code
+        return response.json(), response.status_code
     except requests.exceptions.RequestException as e:
         print("Error: " + str(e))
         return str(e), 500

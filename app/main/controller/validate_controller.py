@@ -16,7 +16,8 @@ class ValidateJSON(Resource):
 
     @api.doc("validate_json")
     @api.expect(validate)
-    def post(self) -> Response:
+    def post(self) -> tuple[tuple[str, int], int]:
         """Validate JSON."""
         data = request.json
-        return jsonify(validate_json(data=data))
+        resp,status = validate_json(data=data)
+        return resp,status
