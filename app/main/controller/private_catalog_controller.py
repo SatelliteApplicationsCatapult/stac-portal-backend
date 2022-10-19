@@ -60,6 +60,9 @@ class CollectionsList(Resource):
                        "message": f"Error converting timestamp: {e}",
                    }, 400
 
+    def get(self):
+        return private_catalog_service.get_all_collections(), 200
+
 
 @api.route("/collections/<collection_id>/")
 class Collection(Resource):
@@ -84,6 +87,8 @@ class CollectionItems(Resource):
     @api.response("4xx", "Stac API reported error")
     @api.expect(PrivateCatalogDto.item_dto, validate=True)
     def post(self, collection_id):
+        print('EREEEE')
+        print(request.data)
         try:
             return stac_service.add_item_to_collection_on_stac_api(collection_id, request.json)
         except CollectionDoesNotExistError as e:

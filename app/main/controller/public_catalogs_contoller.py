@@ -65,7 +65,7 @@ class PublicCatalogsCollections(Resource):
     def post(self):
         spatial_extent: list[float] = request.json['bbox']
         temporal_extent: str = request.json['datetime']
-        return (public_catalogs_service.find_all_collections(spatial_extent, temporal_extent,
+        return (public_catalogs_service.search_collections(spatial_extent, temporal_extent,
                                                              )), 200
 
 
@@ -79,7 +79,7 @@ class SpecificPublicCatalogCollections(Resource):
         spatial_extent: list[float] = request.json['bbox']
         temporal_extent: str = request.json['datetime']
         try:
-            return (public_catalogs_service.find_all_collections(spatial_extent, temporal_extent,
+            return (public_catalogs_service.search_collections(spatial_extent, temporal_extent,
                                                                  public_catalog_id)), 200
         except CatalogDoesNotExistError:
             return {
