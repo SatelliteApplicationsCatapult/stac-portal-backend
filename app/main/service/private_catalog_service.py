@@ -115,7 +115,7 @@ def remove_collection(collection_id: str) -> Dict[str, any]:
     return {"status": "success"}
 
 
-def find_all_collections(bbox: shapely.geometry.polygon.Polygon or list[float], time_interval_timestamp: str,
+def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], time_interval_timestamp: str,
                          ) -> dict[str, any] or list[any]:
     if isinstance(bbox, list):
         bbox = shapely.geometry.box(*bbox)
@@ -133,6 +133,16 @@ def find_all_collections(bbox: shapely.geometry.polygon.Polygon or list[float], 
             or_(PrivateCollection.temporal_extent_end == None, PrivateCollection.temporal_extent_end >= time_end
                 ))
     data = a.all()
+    # group data by parent_catalog parameter
+    grouped_data = []
+    for item in data:
+        item: PrivateCollection
+        grouped_data.append(item.as_dict())
+    return grouped_data
+
+
+def get_all_collections():
+    data = db.session.query(PrivateCollection).all()
     # group data by parent_catalog parameter
     grouped_data = []
     for item in data:

@@ -186,7 +186,7 @@ def _store_catalog_and_collections(title, url, summary) -> int or None:
         return _store_collections(already_existing_catalog)
 
 
-def find_all_collections(bbox: shapely.geometry.polygon.Polygon or list[float], time_interval_timestamp: str,
+def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], time_interval_timestamp: str,
                          public_catalog_id: int = None) -> dict[str, any] or list[any]:
     if public_catalog_id:
         try:

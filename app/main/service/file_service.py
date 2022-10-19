@@ -39,7 +39,7 @@ def upload_filestream_to_blob(filename: str, filestream) -> str:
         blob=filename,
     )
     try:
-        blob_client.upload_blob(filestream, overwrite=True)
+        blob_client.upload_blob(filestream)
         return "File uploaded successfully."
     except azure.core.exceptions.ResourceExistsError:
         raise FileExistsError
