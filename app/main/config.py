@@ -17,9 +17,9 @@ class DevelopmentConfig(Config):
     ENV = "Dev"
     SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI",
                                         "postgresql://postgres:postgres@localhost:5432/postgres")
-    TARGET_STAC_API_SERVER = os.getenv('TARGET_STAC_API_SERVER', "http://172.17.0.1:8082")
+    TARGET_STAC_API_SERVER = os.getenv('TARGET_STAC_API_SERVER', "http://localhost:8082")
     STAC_VALIDATOR_ENDPOINT = os.getenv('STAC_VALIDATOR_ENDPOINT', "http://localhost:7000")
-    STAC_SELECTIVE_INGESTER_ENDPOINT = os.getenv('STAC_SELECTIVE_INGESTER_ENDPOINT', "http://172.17.0.1:7001")
+    STAC_SELECTIVE_INGESTER_ENDPOINT = os.getenv('STAC_SELECTIVE_INGESTER_ENDPOINT', "http://localhost:7001")
     GDAL_INFO_API_ENDPOINT = os.getenv('GDAL_INFO_API_ENDPOINT', "http://localhost:7002")
     AZURE_STORAGE_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING', "")
 
@@ -44,6 +44,18 @@ class StagingConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     ENV = "Production"
+    SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI",
+                                        "postgresql://postgres:postgres@ctplt-pda-rg-prod-psqlflexibleserver.postgres.database.azure.com:5432/stacportaldb")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    TARGET_STAC_API_SERVER = os.getenv('TARGET_STAC_API_SERVER',
+                                       "http://ctplt-pda-rg-prod-stac-api-server.azurewebsites.net/")
+    STAC_VALIDATOR_ENDPOINT = os.getenv('STAC_VALIDATOR_ENDPOINT',
+                                        "http://stac-validator-api.microservices.ctplt-pda-rg-prod.azure.com")
+    STAC_SELECTIVE_INGESTER_ENDPOINT = os.getenv('STAC_SELECTIVE_INGESTER_ENDPOINT',
+                                                 "http://stac-api-selective-ingester.microservices.ctplt-pda-rg-prod.azure.com/")
+    GDAL_INFO_API_ENDPOINT = os.getenv('GDAL_INFO_API_ENDPOINT',
+                                       "http://gdal-info-api.microservices.ctplt-pda-rg-prod.azure.com")
+    AZURE_STORAGE_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING', "")
 
 
 config_by_name = dict(
