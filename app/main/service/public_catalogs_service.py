@@ -1,5 +1,5 @@
 import json
-import multiprocessing
+import time
 from threading import Thread
 from typing import Dict, List, Tuple
 
@@ -61,6 +61,7 @@ def store_publicly_available_catalogs() -> Tuple[int, int]:
     filtered_response_result = [i for i in response_result if i['isPrivate'] == False and i['isApi'] == True]
     results = []
     work = []
+
     # pool = multiprocessing.Pool(processes=4)
     # for catalog in filtered_response_result:
     #     work.append(
@@ -68,8 +69,19 @@ def store_publicly_available_catalogs() -> Tuple[int, int]:
     # [work.wait() for work in work]
     # for work in work:
     #     results.append(work.get())
+    def run_async(title, catalog_url, catalog_summary, results_list, app_for_context):
+        with app_for_context.app_context():
+            try:
+                results_list.append(_store_catalog_and_collections(title, catalog_url, catalog_summary))
+            except:
+                results_list.append(None)
+
+    app = current_app._get_current_object()  # TODO: Is there a better way to do this?
     for catalog in filtered_response_result:
-        results.append(_store_catalog_and_collections(catalog['title'], catalog['url'], catalog['summary']))
+        t = Thread(target=run_async, args=(catalog['title'], catalog['url'], catalog['summary'], results, app))
+        t.start()
+    while len(results) < len(filtered_response_result):
+        time.sleep(0.1)
     number_of_catalogs = len([i for i in results if i is not None])
     number_of_collections = sum([i for i in results if i is not None])
     return number_of_catalogs, number_of_collections
@@ -187,7 +199,7 @@ def _store_catalog_and_collections(title, url, summary) -> int or None:
 
 
 def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], time_interval_timestamp: str,
-                         public_catalog_id: int = None) -> dict[str, any] or list[any]:
+                       public_catalog_id: int = None) -> dict[str, any] or list[any]:
     if public_catalog_id:
         try:
             get_public_catalog_by_id_as_dict(public_catalog_id)
@@ -426,7 +438,11 @@ def _call_ingestion_microservice(parameters) -> int:
             response = requests.post(
                 microservice_endpoint,
                 json=_parameters, timeout=None)
-            # convert response to json
+            if response.status_code != 200:
+                error_msg = response.text
+                with _app.app_context():
+                    set_stac_ingestion_status_entry(int(callback_id), error_message=error_msg)
+                    return
             response_json = response.json()
             newly_stored_collections = response_json['newly_stored_collections']
             newly_stored_collections_count = response_json['newly_stored_collections_count']
@@ -444,8 +460,12 @@ def _call_ingestion_microservice(parameters) -> int:
             return response_json
 
         except Exception as e:
+            with _app.app_context():
+                err = str({
+                    "error": "Unable to reach ingestion microservice"
+                })
+                set_stac_ingestion_status_entry(int(callback_id), error_message=err)
             print("Error: " + str(e))
-            raise ConnectionError("Could not connect to stac selective ingester microservice")
 
     app = current_app._get_current_object()  # TODO: Is there a better way to do this?
     thread = Thread(target=run_async, args=(parameters, app))
