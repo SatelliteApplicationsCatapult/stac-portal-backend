@@ -37,23 +37,27 @@ def make_stac_ingestion_status_entry(source_stac_api_url: str,
 
 
 def set_stac_ingestion_status_entry(
-        status_id: int, newly_stored_collections_count: int,
-        newly_stored_collections: List[str], updated_collections_count: int,
-        updated_collections: List[str], newly_stored_items_count: int,
-        updated_items_count: int,
-        already_stored_items_count: int) -> Tuple[Dict[any, any]]:
+        status_id: int, newly_stored_collections_count: int = 0,
+        newly_stored_collections: List[str] = None, updated_collections_count: int = 0,
+        updated_collections: List[str] = None, newly_stored_items_count: int = 0,
+        updated_items_count: int = 0,
+        already_stored_items_count: int = 0,
+        error_message=None) -> Tuple[Dict[any, any]]:
     # get StacIngestionStatus object with id = status_id
     a: StacIngestionStatus = StacIngestionStatus.query.get(status_id)
     # update the object
     a.newly_stored_collections_count = newly_stored_collections_count
-    a.newly_stored_collections = ",".join(newly_stored_collections)
+    if newly_stored_collections is not None:
+        a.newly_stored_collections = ",".join(newly_stored_collections)
     a.updated_collections_count = updated_collections_count
-    a.updated_collections = ",".join(updated_collections)
+    if updated_collections is not None:
+        a.updated_collections = ",".join(updated_collections)
     a.newly_stored_items_count = newly_stored_items_count
     a.updated_items_count = updated_items_count
     a.already_stored_items_count = already_stored_items_count
     a.time_finished = datetime.datetime.utcnow()
-
+    if error_message is not None:
+        a.error_message = error_message
     db.session.add(a)
     db.session.commit()
     return a.as_dict()

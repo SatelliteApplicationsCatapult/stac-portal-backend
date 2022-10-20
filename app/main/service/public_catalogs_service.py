@@ -438,7 +438,11 @@ def _call_ingestion_microservice(parameters) -> int:
             response = requests.post(
                 microservice_endpoint,
                 json=_parameters, timeout=None)
-            # convert response to json
+            if response.status_code != 200:
+                error_msg = response.text
+                with _app.app_context():
+                    set_stac_ingestion_status_entry(int(callback_id), error_message=error_msg)
+                    return
             response_json = response.json()
             newly_stored_collections = response_json['newly_stored_collections']
             newly_stored_collections_count = response_json['newly_stored_collections_count']
@@ -456,8 +460,12 @@ def _call_ingestion_microservice(parameters) -> int:
             return response_json
 
         except Exception as e:
+            with _app.app_context():
+                err = str({
+                    "error": "Unable to reach ingestion microservice"
+                })
+                set_stac_ingestion_status_entry(int(callback_id), error_message=err)
             print("Error: " + str(e))
-            raise ConnectionError("Could not connect to stac selective ingester microservice")
 
     app = current_app._get_current_object()  # TODO: Is there a better way to do this?
     thread = Thread(target=run_async, args=(parameters, app))
