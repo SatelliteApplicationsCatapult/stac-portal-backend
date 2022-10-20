@@ -9,7 +9,7 @@ class StacIngestionStatus(db.Model):
     time_started: datetime.datetime = db.Column(
         db.DateTime, nullable=True, default=datetime.datetime.utcnow)
     time_finished: datetime.datetime = db.Column(db.DateTime, nullable=True)
-    source_stac_api_url: str = db.Column(db.Text, nullable=True)
+    source_stac_api_url: str = db.Column(db.Text, db.ForeignKey('public_catalogs.url', ondelete='CASCADE'), index=True)
     target_stac_api_url: str = db.Column(db.Text, nullable=True)
     update: bool = db.Column(db.Boolean, default=False)
     newly_stored_collections_count: int = db.Column(db.Integer,

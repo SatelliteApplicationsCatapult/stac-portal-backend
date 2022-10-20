@@ -1,8 +1,8 @@
 import datetime
-
-from sqlalchemy.orm import backref
+import json
 
 from .. import db
+from ..model.collection_model import Collection
 
 
 class PublicCatalog(db.Model):
@@ -11,10 +11,16 @@ class PublicCatalog(db.Model):
     name: str = db.Column(db.Text, nullable=False)
     url: str = db.Column(db.Text, nullable=False, unique=True)
     description: str = db.Column(db.Text, nullable=True)
-    stac_version: str = db.Column(db.Text, nullable=True)
     added_on: datetime.datetime = db.Column(db.DateTime,
                                             nullable=False,
                                             default=datetime.datetime.utcnow)
+    stored_search_parameters = db.relationship("StoredSearchParameters", backref="public_catalogs", lazy="dynamic",
+                                               cascade="all, delete-orphan")
+    stored_ingestion_statuses = db.relationship("StacIngestionStatus", backref="public_catalogs", lazy="dynamic",
+                                                cascade="all, delete-orphan")
+    collections = db.relationship("PublicCollection", backref="public_catalogs", lazy="dynamic",
+                                  cascade="all, delete-orphan")
+
     def get_number_of_stored_search_parameters(self):
         return StoredSearchParameters.query.filter_by(
             associated_catalog_id=self.id).count()
@@ -31,6 +37,23 @@ class PublicCatalog(db.Model):
         return data
 
 
+class PublicCollection(Collection):
+    __tablename__ = "public_collections"
+    __mapper_args__ = {
+        'polymorphic_identity': 'PublicCollection',
+    }
+    # _id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    # id = db.Column(db.Text, nullable=False)
+    # type = db.Column(db.Text, nullable=False, default="Collection")
+    # title = db.Column(db.Text, nullable=False)
+    # description = db.Column(db.Text, nullable=False)
+    # temporal_extent_start = db.Column(db.DateTime, nullable=True, default=None)
+    # temporal_extent_end = db.Column(db.DateTime, nullable=True, default=None)
+    # spatial_extent = db.Column(Geometry(geometry_type="MULTIPOLYGON"), nullable=True, default=None)
+    parent_catalog = db.Column(db.Integer, db.ForeignKey("public_catalogs.id", ondelete='CASCADE'), nullable=False)
+    __table_args__ = (db.UniqueConstraint('id', 'parent_catalog', name='_id_parent_catalog_uc'),)
+
+
 class StoredSearchParameters(db.Model):
     __tablename__ = "stored_search_parameters"
     id: int = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -40,12 +63,34 @@ class StoredSearchParameters(db.Model):
     used_search_parameters: str = db.Column(db.Text,
                                             nullable=False,
                                             unique=True)
-    # todo: help needed, how to make this on delete cascade work? when deleting a public catalog, all associated
-    #  search parameters should be deleted as well
     associated_catalog_id: int = db.Column(db.Integer,
                                            db.ForeignKey('public_catalogs.id',
                                                          ondelete='CASCADE'),
                                            nullable=False,
                                            index=True)
-    parent = db.relationship('PublicCatalog', backref=backref('StoredSearchParameters', passive_deletes=True))
 
+    def as_dict(self):
+        # data = {'collection': self.collection,
+        #         'bbox': json.loads(self.bbox),
+        #         'used_search_parameters': json.loads(self.used_search_parameters),
+        #         'associated_catalog_id': self.associated_catalog_id,
+        #         'datetime': json.loads(self.datetime),
+        #         'id': self.id
+        #         }
+        data = {}
+        data["collection"] = self.collection
+        try:
+            data["bbox"] = json.loads(self.bbox)
+        except json.decoder.JSONDecodeError:
+            data["bbox"] = []
+        try:
+            data["datetime"] = json.loads(self.datetime)
+        except json.decoder.JSONDecodeError:
+            data["datetime"] = ""
+        try:
+            data["used_search_parameters"] = json.loads(self.used_search_parameters)
+        except json.decoder.JSONDecodeError:
+            data["used_search_parameters"] = ""
+        data["associated_catalog_id"] = self.associated_catalog_id
+        data["id"] = self.id
+        return data
