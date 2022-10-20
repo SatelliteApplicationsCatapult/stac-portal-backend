@@ -28,8 +28,8 @@ def upload_filestream_to_blob(filename: str, filestream) -> str:
     print("Uploading file : " + filename)
     connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
     blob_service_client_settings = {
-        "max_single_put_size": 4 * 1024 * 1024,  # split to 4MB chunks`
-        "max_single_get_size": 4 * 1024 * 1024,  # split to 4MB chunks
+        "max_single_put_size": 64 * 1024 * 1024,  # split to 4MB chunks`
+        "max_single_get_size": 64 * 1024 * 1024,  # split to 4MB chunks
     }
     blob_service_client = BlobServiceClient.from_connection_string(
         connection_string, **blob_service_client_settings
@@ -39,7 +39,7 @@ def upload_filestream_to_blob(filename: str, filestream) -> str:
         blob=filename,
     )
     try:
-        blob_client.upload_blob(filestream)
+        blob_client.upload_blob(filestream, overwrite=True)
         return "File uploaded successfully."
     except azure.core.exceptions.ResourceExistsError:
         raise FileExistsError
