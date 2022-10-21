@@ -247,6 +247,18 @@ def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], ti
             return []
 
 
+def get_collections_from_public_catalog_id(public_catalog_id: int):
+    try:
+        get_public_catalog_by_id_as_dict(public_catalog_id)
+    except CatalogDoesNotExistError:
+        raise PublicCatalogDoesNotExistError
+    data = PublicCollection.query.filter_by(parent_catalog=public_catalog_id).all()
+    out = []
+    for item in data:
+        out.append(item.as_dict())
+    return out
+
+
 def _get_all_available_collections_from_public_catalog(public_catalogue_entry: PublicCatalog) -> List[Dict[
     any, any]]:
     """
