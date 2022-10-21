@@ -259,6 +259,14 @@ def get_collections_from_public_catalog_id(public_catalog_id: int):
     return out
 
 
+def get_all_stored_public_collections_as_list_of_dict():
+    public_collections = PublicCollection.query.all()
+    out = []
+    for public_collection in public_collections:
+        out.append(public_collection.as_dict())
+    return out
+
+
 def _get_all_available_collections_from_public_catalog(public_catalogue_entry: PublicCatalog) -> List[Dict[
     any, any]]:
     """

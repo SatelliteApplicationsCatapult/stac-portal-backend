@@ -56,6 +56,12 @@ class PublicCatalogsUpdate(Resource):
                    'message': f'Updated {number_of_catalogs} catalogs and {number_of_collections} collections',
                }, 200
 
+@api.route('/collections/')
+class PublicCatalogsCollections(Resource):
+    @api.doc("Get all public collections stored in the database")
+    @api.response(200, 'Success')
+    def get(self):
+        return public_catalogs_service.get_all_stored_public_collections_as_list_of_dict()
 
 @api.route("/collections/search/")
 class PublicCatalogsCollections(Resource):
