@@ -53,6 +53,11 @@ class PublicCollection(Collection):
     parent_catalog = db.Column(db.Integer, db.ForeignKey("public_catalogs.id", ondelete='CASCADE'), nullable=False)
     __table_args__ = (db.UniqueConstraint('id', 'parent_catalog', name='_id_parent_catalog_uc'),)
 
+    def as_dict(self):
+        data = super().as_dict()
+        data["parent_catalog"] = self.parent_catalog
+        return data
+
 
 class StoredSearchParameters(db.Model):
     __tablename__ = "stored_search_parameters"
