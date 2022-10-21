@@ -66,7 +66,7 @@ class PublicCatalogsCollections(Resource):
         spatial_extent: list[float] = request.json['bbox']
         temporal_extent: str = request.json['datetime']
         return (public_catalogs_service.search_collections(spatial_extent, temporal_extent,
-                                                             )), 200
+                                                           )), 200
 
 
 @api.route("/<int:public_catalog_id>/collections/search/")
@@ -80,7 +80,7 @@ class SpecificPublicCatalogCollections(Resource):
         temporal_extent: str = request.json['datetime']
         try:
             return (public_catalogs_service.search_collections(spatial_extent, temporal_extent,
-                                                                 public_catalog_id)), 200
+                                                               public_catalog_id)), 200
         except CatalogDoesNotExistError:
             return {
                        'message': 'Catalog with this id does not exist',
@@ -95,6 +95,20 @@ class PublicCatalogLoadHistory(Resource):
     def get(self, public_catalog_id):
         try:
             return public_catalogs_service.get_all_stored_search_parameters(public_catalog_id), 200
+        except PublicCatalogDoesNotExistError:
+            return {
+                       'message': 'Catalog with this id does not exist',
+                   }, 404
+
+
+@api.route("/<int:public_catalog_id>/collections/")
+class PublicCatalogCollections(Resource):
+    @api.doc(description="Get all collections for specified public catalog")
+    @api.response(200, "Success")
+    @api.response(404, "Not Found - Catalog does not exist")
+    def get(self, public_catalog_id):
+        try:
+            return public_catalogs_service.get_collections_from_public_catalog_id(public_catalog_id), 200
         except PublicCatalogDoesNotExistError:
             return {
                        'message': 'Catalog with this id does not exist',

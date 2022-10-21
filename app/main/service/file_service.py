@@ -6,6 +6,7 @@ from flask import current_app
 from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 from datetime import datetime, timedelta
 
+
 def check_blob_status():
     """Check if the blob storage is available.
 
@@ -111,7 +112,7 @@ def retrieve_file(file_url: str):
         raise err
 
 
-def get_sas_token(filename:str):
+def get_sas_token(filename: str):
     connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
     # split the connection string by ;
     account_key = connection_string.split("AccountKey=")[1].split(";")[0]
@@ -121,7 +122,7 @@ def get_sas_token(filename:str):
         param_split = param.split("=")
         azure_params[param_split[0]] = param_split[1]
     azure_params["AccountKey"] = account_key
-    print (azure_params)
+    print(azure_params)
     account_name = azure_params["AccountName"]
     account_key = azure_params["AccountKey"]
     endpoint_suffix = azure_params["EndpointSuffix"]
@@ -140,5 +141,3 @@ def get_sas_token(filename:str):
 
     blob_url = f"https://{account_name}.blob.{endpoint_suffix}/{container_name}/{blob_name}?{sas_token}"
     return sas_token, blob_url
-
-
