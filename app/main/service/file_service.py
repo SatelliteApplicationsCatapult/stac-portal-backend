@@ -34,7 +34,7 @@ def upload_filestream_to_blob(filename: str, filestream) -> str:
         "max_single_get_size": 64 * 1024 * 1024,  # split to 4MB chunks
     }
     blob_service_client = BlobServiceClient.from_connection_string(
-        connection_string
+        connection_string, **blob_service_client_settings
     )
     blob_client = blob_service_client.get_blob_client(
         container=current_app.config["AZURE_STORAGE_BLOB_NAME_FOR_STAC_ITEMS"],
