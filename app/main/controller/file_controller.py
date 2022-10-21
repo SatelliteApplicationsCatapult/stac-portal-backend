@@ -18,6 +18,17 @@ class CheckBlobStatus(Resource):
         return {"available": available, "message": message}, 200
 
 
+@api.route("/sas_token/<filename>/")
+class GetSasToken(Resource):
+    @api.doc(description="Get a SAS token for the blob")
+    @api.response(200, "Success")
+    def get(self, filename):
+        sas_token, endpoint = get_sas_token(filename)
+
+        return {"sas_token": sas_token,
+                "endpoint": endpoint}, 200
+
+
 @api.route("/stac_assets/<item_id>/upload/")
 class CommitStacAssets(Resource):
     @api.doc(description="Upload stac assets to the azure storage blob")

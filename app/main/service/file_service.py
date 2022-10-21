@@ -3,7 +3,8 @@ import requests
 import xmltodict
 from azure.storage.blob import BlobServiceClient
 from flask import current_app
-
+from azure.storage.blob import generate_blob_sas, BlobSasPermissions
+from datetime import datetime, timedelta
 
 def check_blob_status():
     """Check if the blob storage is available.
@@ -28,8 +29,8 @@ def upload_filestream_to_blob(filename: str, filestream) -> str:
     print("Uploading file : " + filename)
     connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
     blob_service_client_settings = {
-        "max_single_put_size": 4 * 1024 * 1024,  # split to 4MB chunks`
-        "max_single_get_size": 4 * 1024 * 1024,  # split to 4MB chunks
+        "max_single_put_size": 64 * 1024 * 1024,  # split to 4MB chunks`
+        "max_single_get_size": 64 * 1024 * 1024,  # split to 4MB chunks
     }
     blob_service_client = BlobServiceClient.from_connection_string(
         connection_string, **blob_service_client_settings
@@ -39,7 +40,7 @@ def upload_filestream_to_blob(filename: str, filestream) -> str:
         blob=filename,
     )
     try:
-        blob_client.upload_blob(filestream)
+        blob_client.upload_blob(filestream, overwrite=True)
         return "File uploaded successfully."
     except azure.core.exceptions.ResourceExistsError:
         raise FileExistsError
@@ -108,3 +109,36 @@ def retrieve_file(file_url: str):
         raise http_err
     except Exception as err:
         raise err
+
+
+def get_sas_token(filename:str):
+    connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
+    # split the connection string by ;
+    account_key = connection_string.split("AccountKey=")[1].split(";")[0]
+    connection_string_split = connection_string.split(";")
+    azure_params = {}
+    for param in connection_string_split:
+        param_split = param.split("=")
+        azure_params[param_split[0]] = param_split[1]
+    azure_params["AccountKey"] = account_key
+    print (azure_params)
+    account_name = azure_params["AccountName"]
+    account_key = azure_params["AccountKey"]
+    endpoint_suffix = azure_params["EndpointSuffix"]
+    container_name = current_app.config["AZURE_STORAGE_BLOB_NAME_FOR_STAC_ITEMS"]
+    blob_name = filename
+    # generate the sas token
+
+    sas_token = generate_blob_sas(
+        account_name=account_name,
+        account_key=account_key,
+        container_name=container_name,
+        blob_name=blob_name,
+        permission=BlobSasPermissions(write=True),
+        expiry=datetime.utcnow() + timedelta(hours=1),
+    )
+
+    blob_url = f"https://{account_name}.blob.{endpoint_suffix}/{container_name}/{blob_name}?{sas_token}"
+    return sas_token, blob_url
+
+
