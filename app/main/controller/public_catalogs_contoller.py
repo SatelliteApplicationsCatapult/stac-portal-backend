@@ -51,10 +51,11 @@ class PublicCatalogsUpdate(Resource):
     @api.doc(description='Get all public catalogs and update them')
     @api.response(200, 'Success')
     def get(self):
-        number_of_catalogs, number_of_collections = public_catalogs_service.store_publicly_available_catalogs()
+        public_catalogs_service.store_publicly_available_catalogs()
         return {
-                   'message': f'Updated {number_of_catalogs} catalogs and {number_of_collections} collections',
+                   'message': "Sync operation started"
                }, 200
+
 
 @api.route('/collections/')
 class PublicCatalogsCollections(Resource):
@@ -62,6 +63,7 @@ class PublicCatalogsCollections(Resource):
     @api.response(200, 'Success')
     def get(self):
         return public_catalogs_service.get_all_stored_public_collections_as_list_of_dict()
+
 
 @api.route("/collections/search/")
 class PublicCatalogsCollections(Resource):
