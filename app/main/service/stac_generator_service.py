@@ -76,7 +76,7 @@ def create_STAC_Item(metadata):
 
     item.set_self_href("item.json")
 
-    # item.validate()
+    item.validate()
     item.save_object()
 
     item_json = item.to_dict()
@@ -152,3 +152,10 @@ def planet_stac_parser(properties, metadata):
         properties["view:sun_azimuth"] = planet_properties["sun_azimuth"]
     if planet_properties.get("view_angle"):
         properties["view:off_nadir"] = planet_properties["view_angle"]
+
+
+def maxar_stac_parser(properties, metadata):
+    """Parse Maxar STAC metadata"""
+    # Cloud Cover
+    if metadata["README"].get("CLOUDCOVER") != None:
+        properties["eo:cloud_cover"] = float(metadata["README"]["CLOUDCOVER"])
