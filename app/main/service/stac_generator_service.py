@@ -41,6 +41,8 @@ def create_STAC_Item(metadata):
     # Call the appropriate parser to extend the properties
     if metadata["staticVariables"]["provider"] == "Planet":
         planet_stac_parser(properties, metadata["additional"])
+    elif metadata["staticVariables"]["provider"] == "Maxar":
+        maxar_stac_parser(properties, metadata["additional"])
 
     # Instantiate pystac item
     item = pystac.Item(
@@ -68,11 +70,20 @@ def create_STAC_Item(metadata):
         )
 
     # Add STAC extensions
-    item.stac_extensions = [
-        "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
-        "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
-        "https://stac-extensions.github.io/view/v1.0.0/schema.json",
-    ]
+    # If planet
+    if metadata["staticVariables"]["provider"] == "Planet":
+        item.stac_extensions = [
+            "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+            "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
+            "https://stac-extensions.github.io/view/v1.0.0/schema.json",
+        ]
+
+    # If Maxar
+    elif metadata["staticVariables"]["provider"] == "Maxar":
+        item.stac_extensions = [
+            "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+            "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
+        ]
 
     item.set_self_href("item.json")
 
