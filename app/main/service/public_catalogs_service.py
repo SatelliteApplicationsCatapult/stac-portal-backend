@@ -87,13 +87,20 @@ def store_publicly_available_catalogs() -> None:
     # return number_of_catalogs, number_of_collections
 
 
-
 def remove_all_public_catalogs() -> None:
     """
     Remove all public catalogs from the database.
     """
     db.session.query(PublicCatalog).delete()
     db.session.commit()
+
+
+def get_public_collections():
+    public_collections = PublicCollection.query.all()
+    out = []
+    for public_collection in public_collections:
+        out.append(public_collection.as_dict())
+    return out
 
 
 def _is_catalog_public_and_valid(url: str) -> bool:
