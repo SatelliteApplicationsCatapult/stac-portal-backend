@@ -49,7 +49,7 @@ def store_new_public_catalog(name: str, url: str, description: str, return_as_di
         raise CatalogAlreadyExistsError
 
 
-def store_publicly_available_catalogs() -> Tuple[int, int]:
+def store_publicly_available_catalogs() -> None:
     """
     Get all publicly available catalogs and store them in the database.
 
@@ -80,11 +80,12 @@ def store_publicly_available_catalogs() -> Tuple[int, int]:
     for catalog in filtered_response_result:
         t = Thread(target=run_async, args=(catalog['title'], catalog['url'], catalog['summary'], results, app))
         t.start()
-    while len(results) < len(filtered_response_result):
-        time.sleep(0.1)
-    number_of_catalogs = len([i for i in results if i is not None])
-    number_of_collections = sum([i for i in results if i is not None])
-    return number_of_catalogs, number_of_collections
+    # while len(results) < len(filtered_response_result):
+    #     time.sleep(0.1)
+    # number_of_catalogs = len([i for i in results if i is not None])
+    # number_of_collections = sum([i for i in results if i is not None])
+    # return number_of_catalogs, number_of_collections
+
 
 
 def remove_all_public_catalogs() -> None:
