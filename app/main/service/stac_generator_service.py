@@ -71,13 +71,12 @@ def create_STAC_Item(metadata):
     azure_params["AccountKey"] = account_key
     account_name = azure_params["AccountName"]
     endpoint_suffix = azure_params["EndpointSuffix"]
-    container_name = current_app.config["AZURE_STORAGE_BLOB_NAME_FOR_STAC_ITEMS"]
+    blob_url = f"https://{account_name}.blob.{endpoint_suffix}"
 
     for asset in metadata["assets"]:
         # Remove extension from asset name
         name = re.sub(r"\.[^.]*$", "", asset["filename"])
 
-        blob_url = f"https://{account_name}.blob.{endpoint_suffix}"
         href = asset["href"],
         href = href[0]
         print("Href is: ", href)
@@ -105,6 +104,11 @@ def create_STAC_Item(metadata):
     for other_asset in metadata["otherAssets"]:
         url = metadata["staticVariables"]["url"].split("/")[0:-1]
         href = "/".join(url) + "/" + other_asset["name"]
+        if not href.startswith(blob_url):
+            # if href starts does not start with slash add it
+            if not href.startswith("/"):
+                href = "/" + href
+            href = blob_url + href
         item.add_asset(
             key=other_asset["name"],
             asset=pystac.Asset(
