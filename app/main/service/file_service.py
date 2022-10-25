@@ -122,7 +122,6 @@ def get_sas_token(filename: str):
         param_split = param.split("=")
         azure_params[param_split[0]] = param_split[1]
     azure_params["AccountKey"] = account_key
-    print(azure_params)
     account_name = azure_params["AccountName"]
     account_key = azure_params["AccountKey"]
     endpoint_suffix = azure_params["EndpointSuffix"]

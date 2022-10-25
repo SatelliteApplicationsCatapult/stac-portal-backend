@@ -7,6 +7,12 @@ from pyproj import CRS
 from rasterio.warp import transform_bounds
 from shapely.geometry import Polygon
 
+stac_extensions = {
+    "eo": "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    "proj": "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
+    "view": "https://stac-extensions.github.io/view/v1.0.0/schema.json",
+}
+
 
 def create_STAC_Item(metadata):
     # EPSG (Source and destination)
@@ -96,21 +102,19 @@ def create_STAC_Item(metadata):
             ),
         )
 
-    # Add STAC extensions
-    # If planet
-    if metadata["staticVariables"]["provider"] == "Planet":
-        item.stac_extensions = [
-            "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
-            "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
-            "https://stac-extensions.github.io/view/v1.0.0/schema.json",
-        ]
+    for other_asset in metadata["otherAssets"]:
+        url = metadata["staticVariables"]["url"].split("/")[0:-1]
+        href = "/".join(url) + "/" + other_asset["name"]
+        item.add_asset(
+            key=other_asset["name"],
+            asset=pystac.Asset(
+                href=href,
+                media_type=other_asset["type"],  # TODO: Convert to pystac.MediaType
+            ),
+        )
 
-    # If Maxar
-    elif metadata["staticVariables"]["provider"] == "Maxar":
-        item.stac_extensions = [
-            "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
-            "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
-        ]
+    # Configure extensions
+    configure_extensions(item, properties)
 
     item.set_self_href("item.json")
 
@@ -191,9 +195,58 @@ def planet_stac_parser(properties, metadata):
     if planet_properties.get("view_angle"):
         properties["view:off_nadir"] = planet_properties["view_angle"]
 
+    # Thumbnail
+
 
 def maxar_stac_parser(properties, metadata):
     """Parse Maxar STAC metadata"""
     # Cloud Cover
     if metadata["README"].get("CLOUDCOVER") != None:
         properties["eo:cloud_cover"] = float(metadata["README"]["CLOUDCOVER"])
+
+    # Thumbnail
+
+    # View additions
+    try:
+        if metadata["delivery"]["message"]["DeliveryMetadata"]["product"]["sunAzimuth"]:
+            properties["view:sun_azimuth"] = float(
+                metadata["delivery"]["message"]["DeliveryMetadata"]["product"][
+                    "sunAzimuth"
+                ]
+            )
+    except:
+        pass
+
+    try:
+        if metadata["delivery"]["message"]["DeliveryMetadata"]["product"][
+            "sunElevation"
+        ]:
+            properties["view:sun_elevation"] = float(
+                metadata["delivery"]["message"]["DeliveryMetadata"]["product"][
+                    "sunElevation"
+                ]
+            )
+    except:
+        pass
+
+    try:
+        if metadata["delivery"]["message"]["DeliveryMetadata"]["product"][
+            "offNadirAngle"
+        ]:
+            properties["view:off_nadir"] = float(
+                metadata["delivery"]["message"]["DeliveryMetadata"]["product"][
+                    "offNadirAngle"
+                ]
+            )
+    except:
+        pass
+
+
+# Function that checkswhat extensions are present and adds them to the item
+def configure_extensions(item, properties):
+    if any(key.startswith("eo:") for key in properties):
+        item.stac_extensions.append(stac_extensions["eo"])
+    if any(key.startswith("view:") for key in properties):
+        item.stac_extensions.append(stac_extensions["view"])
+    if any(key.startswith("proj:") for key in properties):
+        item.stac_extensions.append(stac_extensions["proj"])
