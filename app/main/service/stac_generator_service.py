@@ -2,6 +2,7 @@ import re
 from datetime import datetime
 
 import pystac
+from flask import current_app
 from pyproj import CRS
 from rasterio.warp import transform_bounds
 from shapely.geometry import Polygon
@@ -59,13 +60,38 @@ def create_STAC_Item(metadata):
         properties=properties,
     )
 
+    connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
+    # split the connection string by ;
+    account_key = connection_string.split("AccountKey=")[1].split(";")[0]
+    connection_string_split = connection_string.split(";")
+    azure_params = {}
+    for param in connection_string_split:
+        param_split = param.split("=")
+        azure_params[param_split[0]] = param_split[1]
+    azure_params["AccountKey"] = account_key
+    account_name = azure_params["AccountName"]
+    endpoint_suffix = azure_params["EndpointSuffix"]
+    blob_url = f"https://{account_name}.blob.{endpoint_suffix}"
+
     for asset in metadata["assets"]:
         # Remove extension from asset name
         name = re.sub(r"\.[^.]*$", "", asset["filename"])
+
+        href = asset["href"],
+        href = href[0]
+        print("Href is: ", href)
+        print("Href type is: ", type(href))
+
+        # if the href does not begin with blob_url, prepend it
+        if not href.startswith(blob_url):
+            # if href starts does not start with slash add it
+            if not href.startswith("/"):
+                href = "/" + href
+            href = blob_url + href
         item.add_asset(
             key=name,
             asset=pystac.Asset(
-                href=asset["href"],
+                href=href,
                 media_type=asset["type"],  # TODO: Convert to pystac.MediaType
                 extra_fields={
                     "eo:bands": asset["bands"],
@@ -78,6 +104,11 @@ def create_STAC_Item(metadata):
     for other_asset in metadata["otherAssets"]:
         url = metadata["staticVariables"]["url"].split("/")[0:-1]
         href = "/".join(url) + "/" + other_asset["name"]
+        if not href.startswith(blob_url):
+            # if href starts does not start with slash add it
+            if not href.startswith("/"):
+                href = "/" + href
+            href = blob_url + href
         item.add_asset(
             key=other_asset["name"],
             asset=pystac.Asset(
