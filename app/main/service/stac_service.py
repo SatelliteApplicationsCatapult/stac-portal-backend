@@ -178,7 +178,8 @@ def add_item_to_collection_on_stac_api(
         collection_id: str,
         item_data: Dict[str, any]) -> Dict[str, any]:
     response = requests.post(route("COLLECTIONS") + collection_id + "/items",
-                             json=item_data)
+                             json=item_data, headers={"Content-Type": "application/json"})
+    
     if response.status_code in range(200, 203):
         collection_json = response.json()
         return collection_json
