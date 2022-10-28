@@ -1,7 +1,6 @@
 import json
-import time
 from threading import Thread
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import geoalchemy2
 import requests
@@ -223,12 +222,19 @@ def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], ti
     time_start, time_end = process_timestamp.process_timestamp_dual_string(time_interval_timestamp)
     print("Time start: " + str(time_start))
     print("Time end: " + str(time_end))
-    if time_start:
+    # all 4 cases of time_start and time_end
+    if time_start and time_end:
         a = a.filter(
-            or_(PublicCollection.temporal_extent_start == None, PublicCollection.temporal_extent_start <= time_start))
-    if time_end:
-        a = a.filter(or_(PublicCollection.temporal_extent_end == None, PublicCollection.temporal_extent_end >= time_end
-                         ))
+            or_(PublicCollection.temporal_extent_start <= time_end, PublicCollection.temporal_extent_start == None),
+            or_(PublicCollection.temporal_extent_end >= time_start, PublicCollection.temporal_extent_end == None))
+    elif time_start and not time_end:
+        a = a.filter(
+            or_(PublicCollection.temporal_extent_end >= time_start, PublicCollection.temporal_extent_end == None))
+    elif not time_start and time_end:
+        a = a.filter(
+            or_(PublicCollection.temporal_extent_start <= time_end, PublicCollection.temporal_extent_start == None))
+    else:
+        pass
     data = a.all()
     # group data by parent_catalog parameter
     grouped_data = {}
