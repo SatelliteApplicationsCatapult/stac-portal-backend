@@ -1,9 +1,10 @@
+import logging
+
 from flask import request
 from flask_restx import Resource
 
-from ..util.dto import StacGeneratorDto
 from ..service.stac_generator_service import create_STAC_Item
-
+from ..util.dto import StacGeneratorDto
 
 api = StacGeneratorDto.api
 
@@ -20,6 +21,6 @@ class StacGenerator(Resource):
         try:
             return create_STAC_Item(data["metadata"])
         except Exception as e:
-            print("Error: ", e)
+            logging.error(e)
 
         return None

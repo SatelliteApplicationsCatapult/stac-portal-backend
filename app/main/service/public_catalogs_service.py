@@ -1,7 +1,7 @@
 import json
-import time
+import logging
 from threading import Thread
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import geoalchemy2
 import requests
@@ -60,15 +60,7 @@ def store_publicly_available_catalogs() -> None:
     response_result = response.json()
     filtered_response_result = [i for i in response_result if i['isPrivate'] == False and i['isApi'] == True]
     results = []
-    work = []
 
-    # pool = multiprocessing.Pool(processes=4)
-    # for catalog in filtered_response_result:
-    #     work.append(
-    #         pool.apply_async(_store_catalog_and_collections, (catalog['title'], catalog['url'], catalog['summary'])))
-    # [work.wait() for work in work]
-    # for work in work:
-    #     results.append(work.get())
     def run_async(title, catalog_url, catalog_summary, results_list, app_for_context):
         with app_for_context.app_context():
             try:
@@ -135,17 +127,16 @@ def _store_collections(public_catalog_entry: PublicCatalog) -> int:
     try:
         collections_for_new_catalog: List[
             Dict[any, any]] = _get_all_available_collections_from_public_catalog(public_catalog_entry)
-        # for each new collection, store it in the database
         for collection in collections_for_new_catalog:
-            # get a public_collection object using public_catalog_entry id and collection id
             public_collection: PublicCollection
             public_collection: PublicCollection = PublicCollection.query.filter_by(
                 parent_catalog=public_catalog_entry.id, id=collection['id']).first()
             if public_collection:
-                print("Updating collection: " + collection['id'])
+                pass
+                logging.log("Updating collection: " + collection['id'])
 
             else:
-                print("Creating new collection: " + collection['id'])
+                logging.log("Creating new collection: " + collection['id'])
                 public_collection: PublicCollection = PublicCollection()
                 public_collection.id = collection['id']
             try:
@@ -182,7 +173,6 @@ def _store_collections(public_catalog_entry: PublicCatalog) -> int:
         raise ConvertingTimestampError
     except KeyError as e:
         db.session.commit()
-        print(e)
 
     return count_added
 
@@ -221,16 +211,20 @@ def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], ti
     if public_catalog_id:
         a = a.filter(PublicCollection.parent_catalog == public_catalog_id)
     time_start, time_end = process_timestamp.process_timestamp_dual_string(time_interval_timestamp)
-    print("Time start: " + str(time_start))
-    print("Time end: " + str(time_end))
-    if time_start:
+    # all 4 cases of time_start and time_end
+    if time_start and time_end:
         a = a.filter(
-            or_(PublicCollection.temporal_extent_start == None, PublicCollection.temporal_extent_start <= time_start))
-    if time_end:
-        a = a.filter(or_(PublicCollection.temporal_extent_end == None, PublicCollection.temporal_extent_end >= time_end
-                         ))
+            or_(PublicCollection.temporal_extent_start <= time_end, PublicCollection.temporal_extent_start == None),
+            or_(PublicCollection.temporal_extent_end >= time_start, PublicCollection.temporal_extent_end == None))
+    elif time_start and not time_end:
+        a = a.filter(
+            or_(PublicCollection.temporal_extent_end >= time_start, PublicCollection.temporal_extent_end == None))
+    elif not time_start and time_end:
+        a = a.filter(
+            or_(PublicCollection.temporal_extent_start <= time_end, PublicCollection.temporal_extent_start == None))
+    else:
+        pass
     data = a.all()
-    # group data by parent_catalog parameter
     grouped_data = {}
     for item in data:
         item: PublicCollection
@@ -283,7 +277,7 @@ def _get_all_available_collections_from_public_catalog(public_catalogue_entry: P
     :param public_catalogue_entry: PublicCatalog object
     :return: List of all collections in the catalog
     """
-    print("Getting collections from catalog: " + public_catalogue_entry.name)
+    logging.info("Getting collections from catalog: " + public_catalogue_entry.name)
     url = public_catalogue_entry.url
     # if url ends with /, remove it
     if url.endswith('/'):
@@ -296,7 +290,6 @@ def _get_all_available_collections_from_public_catalog(public_catalogue_entry: P
     collections_to_return = []
     for collection in collections:
         try:
-            print("Doing collection: " + collection['title'])
             # get the item link
             links = collection['links']
             # find link with rel type 'item'
@@ -307,21 +300,21 @@ def _get_all_available_collections_from_public_catalog(public_catalogue_entry: P
                     break
             # if item link is not found, skip this collection
             if item_link is None:
-                print("Skipping collection without item link: " + collection['title'])
+                logging.info("Skipping collection without item link: " + collection['title'])
                 continue
             # if item link is found, check if it is empty
             item_link_response = requests.get(item_link)
             if item_link_response.status_code != 200:
-                print("Skipping collection with not-public item link: " + collection['title'])
+                logging.info("Skipping collection with not-public item link: " + collection['title'])
                 continue
             item_link_response_json = item_link_response.json()
             if len(item_link_response_json['features']) == 0:
-                print("Skipping empty collection: " + collection['title'])
+                logging.info("Skipping empty collection: " + collection['title'])
                 continue
             collections_to_return.append(collection)
         except Exception as e:
-            print("Skipping collection with error: " + collection['title'])
-            print(e)
+            logging.error("Skipping collection with error: " + collection['title'])
+            logging.error(e)
     return collections_to_return
 
 
@@ -409,18 +402,16 @@ def update_specific_collections_via_catalog_id(catalog_id: int,
     :param collections: List of collection ids to update
     :return: Updated collection ids
     """
-    print("Updating collections for catalogue id: " + str(catalog_id))
+    logging.log("Updating collections for catalogue id: " + str(catalog_id))
     public_catalogue_entry: PublicCatalog = PublicCatalog.query.filter_by(
         id=catalog_id).first()
 
     if public_catalogue_entry is None:
         raise CatalogDoesNotExistError("No catalogue entry found for id: " +
                                        str(catalog_id))
-    print("Public catalogue entry: " + str(public_catalogue_entry))
     stored_search_parameters: [StoredSearchParameters
                                ] = StoredSearchParameters.query.filter_by(
         associated_catalog_id=catalog_id).all()
-    print("Stored search parameters: " + str(stored_search_parameters))
     stored_search_parameters_to_run = []
     if collections is None or len(collections) == 0:
         stored_search_parameters_to_run = stored_search_parameters
@@ -462,7 +453,6 @@ def _call_ingestion_microservice(parameters) -> int:
 
     def run_async(_parameters, _app):
         try:
-            print("Microservice endpoint: " + microservice_endpoint)
             response = requests.post(
                 microservice_endpoint,
                 json=_parameters, timeout=None)
@@ -493,7 +483,7 @@ def _call_ingestion_microservice(parameters) -> int:
                     "error": "Unable to reach ingestion microservice"
                 })
                 set_stac_ingestion_status_entry(int(callback_id), error_message=err)
-            print("Error: " + str(e))
+            logging.error("Error: " + str(e))
 
     app = current_app._get_current_object()  # TODO: Is there a better way to do this?
     thread = Thread(target=run_async, args=(parameters, app))
@@ -509,12 +499,10 @@ def _store_search_parameters(associated_catalogue_id,
     :param associated_catalogue_id: Catalogue id of the catalogue the collections were loaded from
     :param parameters: STAC Filter parameters
     """
-    print("Parameters: " + str(parameters))
     try:
         for collection in parameters['collections']:
             filtered_parameters = parameters.copy()
             filtered_parameters['collections'] = [collection]
-            print("Storing search parameters: " + str(filtered_parameters))
 
             try:
                 stored_search_parameters = StoredSearchParameters()
@@ -534,7 +522,6 @@ def _store_search_parameters(associated_catalogue_id,
                     pass
 
                 db.session.add(stored_search_parameters)
-                print("Stored search parameters: " + str(stored_search_parameters))
                 db.session.commit()
             except sqlalchemy.exc.IntegrityError:
                 # exact same search parameters already exist, no need to store them again
@@ -596,7 +583,6 @@ def _run_ingestion_task_force_update(
     """
     responses_from_ingestion_microservice = []
     for i in stored_search_parameters:
-        print("Updating with search parameters:", i)
         try:
             used_search_parameters = json.loads(i.used_search_parameters)
             used_search_parameters["target_stac_catalog_url"] = current_app.config["TARGET_STAC_API_SERVER"]

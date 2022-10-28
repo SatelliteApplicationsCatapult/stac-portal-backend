@@ -20,8 +20,7 @@ class Collections(Resource):
     def post(self):
         spatial_extent: list[float] = request.json['bbox']
         temporal_extent: str = request.json['datetime']
-        return (private_catalog_service.find_all_collections(spatial_extent, temporal_extent,
-                                                             )), 200
+        return (private_catalog_service.search_collections(spatial_extent, temporal_extent)), 200
 
 
 @api.route("/collections/")
@@ -33,7 +32,7 @@ class CollectionsList(Resource):
     def post(self):
         try:
             return private_catalog_service.add_collection(request.json)
-        except PrivateCollectionAlreadyExistsError as e:
+        except PrivateCollectionAlreadyExistsError:
             return {
                        "message": "Collection with this ID already exists",
                    }, 409
@@ -51,7 +50,7 @@ class CollectionsList(Resource):
     def put(self):
         try:
             return private_catalog_service.update_collection(request.json), 200
-        except PrivateCollectionDoesNotExistError as e:
+        except PrivateCollectionDoesNotExistError:
             return {
                        "message": "Collection with this ID not found",
                    }, 404
@@ -72,7 +71,7 @@ class Collection(Resource):
     def delete(self, collection_id: str) -> Tuple[Dict[str, str], int]:
         try:
             return private_catalog_service.remove_collection(collection_id), 200
-        except PrivateCollectionDoesNotExistError as e:
+        except PrivateCollectionDoesNotExistError:
             return {
                        "message": "Collection with this ID not found",
                    }, 404
@@ -87,15 +86,14 @@ class CollectionItems(Resource):
     @api.response("4xx", "Stac API reported error")
     @api.expect(PrivateCatalogDto.item_dto, validate=True)
     def post(self, collection_id):
-        print('EREEEE')
         print(request.data)
         try:
             return stac_service.add_item_to_collection_on_stac_api(collection_id, request.json)
-        except CollectionDoesNotExistError as e:
+        except CollectionDoesNotExistError:
             return {
                        "message": "Collection with this ID not found",
                    }, 404
-        except ItemAlreadyExistsError as e:
+        except ItemAlreadyExistsError:
             return {
                        "message": "Item with this ID already exists",
                    }, 409
@@ -115,11 +113,11 @@ class CollectionItem(Resource):
     def put(self, collection_id: str, item_id: str):
         try:
             return stac_service.update_item_in_collection_on_stac_api(collection_id, item_id, request.json), 200
-        except CollectionDoesNotExistError as e:
+        except CollectionDoesNotExistError:
             return {
                        "message": "Collection with this ID not found",
                    }, 404
-        except ItemDoesNotExistError as e:
+        except ItemDoesNotExistError:
             return {
                        "message": "Item with this ID not found",
                    }, 404
@@ -131,11 +129,11 @@ class CollectionItem(Resource):
     def delete(self, collection_id: str, item_id: str):
         try:
             return stac_service.remove_item_from_collection_on_stac_api(collection_id, item_id), 200
-        except CollectionDoesNotExistError as e:
+        except CollectionDoesNotExistError:
             return {
                        "message": "Collection with this ID not found",
                    }, 404
-        except ItemDoesNotExistError as e:
+        except ItemDoesNotExistError:
             return {
                        "message": "Item with this ID not found",
                    }, 404

@@ -1,10 +1,12 @@
+import logging
+from datetime import datetime, timedelta
+
 import azure.core.exceptions
 import requests
 import xmltodict
 from azure.storage.blob import BlobServiceClient
-from flask import current_app
 from azure.storage.blob import generate_blob_sas, BlobSasPermissions
-from datetime import datetime, timedelta
+from flask import current_app
 
 
 def check_blob_status():
@@ -14,11 +16,9 @@ def check_blob_status():
     """
     try:
         connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
-        print("Connection string: " + connection_string)
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
         )
-        # close the connection
         blob_service_client.close()
 
         return True, "Blob storage is available."
@@ -27,7 +27,7 @@ def check_blob_status():
 
 
 def upload_filestream_to_blob(filename: str, filestream) -> str:
-    print("Uploading file : " + filename)
+    logging.info("Uploading file : " + filename)
     connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
     blob_service_client_settings = {
         "max_single_put_size": 64 * 1024 * 1024,  # split to 4MB chunks`
@@ -49,36 +49,6 @@ def upload_filestream_to_blob(filename: str, filestream) -> str:
         blob_service_client.close()
 
 
-def does_file_exist_on_blob(filename: str) -> bool:
-    """Check if a filename exists on the blob storage.
-
-    :param filename: The name of the filename to check.
-    :return: A tuple containing the status and the message.
-    """
-    try:
-        connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
-        blob_service_client = BlobServiceClient.from_connection_string(
-            connection_string
-        )
-        container_name = current_app.config["AZURE_STORAGE_BLOB_NAME_FOR_STAC_ITEMS"]
-
-        try:
-            blob_client = blob_service_client.get_blob_client(
-                container=container_name, blob=filename
-            )
-            blob_client.get_blob_properties()
-            blob_service_client.close()
-            return True
-
-        except azure.core.exceptions.ResourceNotFoundError as e:
-            blob_service_client.close()
-            return False
-        finally:
-            blob_service_client.close()
-    except Exception as e:
-        return False
-
-
 def return_file_url(filename: str):
     connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
@@ -88,7 +58,6 @@ def return_file_url(filename: str):
         blob_client = blob_service_client.get_blob_client(
             container=container_name, blob=filename
         )
-        # Get url for download
         return blob_client.url
     except azure.core.exceptions.ResourceNotFoundError as e:
         blob_service_client.close()
@@ -114,7 +83,6 @@ def retrieve_file(file_url: str):
 
 def get_sas_token(filename: str):
     connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
-    # split the connection string by ;
     account_key = connection_string.split("AccountKey=")[1].split(";")[0]
     connection_string_split = connection_string.split(";")
     azure_params = {}
@@ -127,7 +95,6 @@ def get_sas_token(filename: str):
     endpoint_suffix = azure_params["EndpointSuffix"]
     container_name = current_app.config["AZURE_STORAGE_BLOB_NAME_FOR_STAC_ITEMS"]
     blob_name = filename
-    # generate the sas token
 
     sas_token = generate_blob_sas(
         account_name=account_name,

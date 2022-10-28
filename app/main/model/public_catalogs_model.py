@@ -42,14 +42,6 @@ class PublicCollection(Collection):
     __mapper_args__ = {
         'polymorphic_identity': 'PublicCollection',
     }
-    # _id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    # id = db.Column(db.Text, nullable=False)
-    # type = db.Column(db.Text, nullable=False, default="Collection")
-    # title = db.Column(db.Text, nullable=False)
-    # description = db.Column(db.Text, nullable=False)
-    # temporal_extent_start = db.Column(db.DateTime, nullable=True, default=None)
-    # temporal_extent_end = db.Column(db.DateTime, nullable=True, default=None)
-    # spatial_extent = db.Column(Geometry(geometry_type="MULTIPOLYGON"), nullable=True, default=None)
     parent_catalog = db.Column(db.Integer, db.ForeignKey("public_catalogs.id", ondelete='CASCADE'), nullable=False)
     __table_args__ = (db.UniqueConstraint('id', 'parent_catalog', name='_id_parent_catalog_uc'),)
 
@@ -75,13 +67,6 @@ class StoredSearchParameters(db.Model):
                                            index=True)
 
     def as_dict(self):
-        # data = {'collection': self.collection,
-        #         'bbox': json.loads(self.bbox),
-        #         'used_search_parameters': json.loads(self.used_search_parameters),
-        #         'associated_catalog_id': self.associated_catalog_id,
-        #         'datetime': json.loads(self.datetime),
-        #         'id': self.id
-        #         }
         data = {}
         data["collection"] = self.collection
         try:
