@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 
 import azure.core.exceptions
@@ -15,7 +16,6 @@ def check_blob_status():
     """
     try:
         connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
-        print("Connection string: " + connection_string)
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
         )
@@ -27,7 +27,7 @@ def check_blob_status():
 
 
 def upload_filestream_to_blob(filename: str, filestream) -> str:
-    print("Uploading file : " + filename)
+    logging.info("Uploading file : " + filename)
     connection_string = current_app.config["AZURE_STORAGE_CONNECTION_STRING"]
     blob_service_client_settings = {
         "max_single_put_size": 64 * 1024 * 1024,  # split to 4MB chunks`

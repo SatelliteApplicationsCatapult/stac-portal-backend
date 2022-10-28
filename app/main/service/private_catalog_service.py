@@ -123,8 +123,6 @@ def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], ti
         f"SRID=4326;{bbox.wkt}"))
 
     time_start, time_end = process_timestamp.process_timestamp_dual_string(time_interval_timestamp)
-    print("Time start: " + str(time_start))
-    print("Time end: " + str(time_end))
     if time_start:
         a = a.filter(
             or_(PrivateCollection.temporal_extent_start == None, PrivateCollection.temporal_extent_start <= time_start))
