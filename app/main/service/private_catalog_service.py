@@ -114,7 +114,7 @@ def remove_collection(collection_id: str) -> Dict[str, any]:
 
 
 def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], time_interval_timestamp: str,
-                         ) -> dict[str, any] or list[any]:
+                       ) -> dict[str, any] or list[any]:
     if isinstance(bbox, list):
         bbox = shapely.geometry.box(*bbox)
     a = db.session.query(PrivateCollection).filter(PrivateCollection.spatial_extent.ST_Intersects(

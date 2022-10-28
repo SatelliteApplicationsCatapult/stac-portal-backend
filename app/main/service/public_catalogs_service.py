@@ -60,6 +60,7 @@ def store_publicly_available_catalogs() -> None:
     response_result = response.json()
     filtered_response_result = [i for i in response_result if i['isPrivate'] == False and i['isApi'] == True]
     results = []
+
     def run_async(title, catalog_url, catalog_summary, results_list, app_for_context):
         with app_for_context.app_context():
             try:

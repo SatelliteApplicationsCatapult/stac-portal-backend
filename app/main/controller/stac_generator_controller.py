@@ -3,9 +3,8 @@ import logging
 from flask import request
 from flask_restx import Resource
 
-from ..util.dto import StacGeneratorDto
 from ..service.stac_generator_service import create_STAC_Item
-
+from ..util.dto import StacGeneratorDto
 
 api = StacGeneratorDto.api
 

@@ -23,6 +23,7 @@ class StacIngestionStatusViaId(Resource):
                 status_id), 200
         except AttributeError:
             return {'message': 'No result found'}, 404
+
     @api.doc(
         description='Delete a stac ingestion status with specified status_id')
     def delete(self, status_id):
