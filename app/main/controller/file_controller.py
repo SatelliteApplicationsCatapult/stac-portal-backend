@@ -72,7 +72,7 @@ class Upload(Resource):
     def post(self):
         try:
             item_ids = request.form["itemIds"].split(",")
-        except:
+        except KeyError:
             return {"message": "No item ids provided"}, 400
 
         for i in range(len(item_ids)):

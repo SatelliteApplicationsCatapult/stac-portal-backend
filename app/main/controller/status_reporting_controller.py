@@ -30,5 +30,5 @@ class StacIngestionStatusViaId(Resource):
         try:
             return status_reporting_service.remove_stac_ingestion_status_entry(
                 status_id), 200
-        except sqlalchemy.orm.exc.UnmappedInstanceError as e:
+        except sqlalchemy.orm.exc.UnmappedInstanceError:
             return {'message': 'No result found to delete'}, 404
