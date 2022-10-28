@@ -24,7 +24,6 @@ class Collection(db.Model):
         }
         data.pop("_id")
         data.pop("spatial_extent")
-        # convert spatial_extent to shapely
         shape: shapely.geometry.polygon.Polygon = to_shape(self.spatial_extent)
         data["spatial_extent_wkt"] = shape.wkt
 

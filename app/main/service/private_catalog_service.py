@@ -61,8 +61,6 @@ def add_collection(collection: Dict[str, any]) -> Dict[str, any]:
             db.session.commit()
             return status
         except CollectionAlreadyExistsError:
-            # it doesnt exist in database, but is present on stac server, store it in database
-            # and update on stac-fastapi
             status = update_existing_collection_on_stac_api(collection)
             db.session.commit()
             return status
@@ -131,7 +129,6 @@ def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], ti
             or_(PrivateCollection.temporal_extent_end == None, PrivateCollection.temporal_extent_end >= time_end
                 ))
     data = a.all()
-    # group data by parent_catalog parameter
     grouped_data = []
     for item in data:
         item: PrivateCollection
@@ -141,7 +138,6 @@ def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], ti
 
 def get_all_collections():
     data = db.session.query(PrivateCollection).all()
-    # group data by parent_catalog parameter
     grouped_data = []
     for item in data:
         item: PrivateCollection

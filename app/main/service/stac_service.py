@@ -13,21 +13,17 @@ def get_all_collections() -> dict[str, any]:
     response = requests.get(urljoin(current_app.config["TARGET_STAC_API_SERVER"], "collections/"))
     if response.status_code in range(200, 203):
         collection_json = response.json()
-        # for each element in the collections array, check if it is public or private and add a new key
         public_collections: [] = public_catalogs_service.get_public_collections()
         public_collections_ids = [collection["id"] for collection in public_collections]
         for collection in collection_json["collections"]:
-            # if collection id is in public collections, add its parent catalog id to the collection
             collection["management_metadata"] = {}
             if collection["id"] in public_collections_ids:
-                # get the index of the collection in the public collections array
                 index = public_collections_ids.index(collection["id"])
                 collection["management_metadata"]["parent_catalog_id"] = public_collections[index]["parent_catalog"]
                 collection["management_metadata"]["is_public"] = True
             else:
                 collection["management_metadata"]["is_public"] = False
         return collection_json
-        # return collection_json
     else:
         resp = response.json()
         resp["error_code"] = response.status_code

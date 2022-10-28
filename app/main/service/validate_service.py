@@ -5,8 +5,6 @@ from flask import current_app
 
 
 def validate_json(data: Dict[str, Any]) -> tuple[str, int]:
-    """Validate JSON."""
-
     STAC_VALIDATOR_ENDPOINT = current_app.config["STAC_VALIDATOR_ENDPOINT"]
 
     try:

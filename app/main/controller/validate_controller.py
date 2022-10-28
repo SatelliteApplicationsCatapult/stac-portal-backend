@@ -10,12 +10,9 @@ validate = ValidateDto.validate
 
 @api.route("/json/")
 class ValidateJSON(Resource):
-    """Validate JSON Resource."""
-
     @api.doc("validate_json")
     @api.expect(validate)
     def post(self):
-        """Validate JSON."""
         data = request.json
         resp, status = validate_json(data=data)
         return resp, status

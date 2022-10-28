@@ -1,6 +1,6 @@
+from flask import request
 from flask_restx import Resource
 from werkzeug.utils import secure_filename
-from flask import request
 
 from ..service.file_service import *
 from ..util.dto import FileDto, FilesDto
@@ -63,7 +63,6 @@ class RetrieveStacAssets(Resource):
             return {"message": "File not found"}, 404
 
 
-# This takes multiple files and uploads them to the blob
 @api.route("/stac_assets/upload/")
 class Upload(Resource):
     @files_api.doc(description="Upload stac assets to the azure storage blob")

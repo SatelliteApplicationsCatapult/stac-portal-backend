@@ -1,3 +1,5 @@
+import logging
+
 from flask import request
 from flask_restx import Resource
 
@@ -20,6 +22,6 @@ class StacGenerator(Resource):
         try:
             return create_STAC_Item(data["metadata"])
         except Exception as e:
-            print("Error: ", e)
+            logging.error(e)
 
         return None

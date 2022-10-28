@@ -60,15 +60,6 @@ def store_publicly_available_catalogs() -> None:
     response_result = response.json()
     filtered_response_result = [i for i in response_result if i['isPrivate'] == False and i['isApi'] == True]
     results = []
-    work = []
-
-    # pool = multiprocessing.Pool(processes=4)
-    # for catalog in filtered_response_result:
-    #     work.append(
-    #         pool.apply_async(_store_catalog_and_collections, (catalog['title'], catalog['url'], catalog['summary'])))
-    # [work.wait() for work in work]
-    # for work in work:
-    #     results.append(work.get())
     def run_async(title, catalog_url, catalog_summary, results_list, app_for_context):
         with app_for_context.app_context():
             try:
@@ -135,9 +126,7 @@ def _store_collections(public_catalog_entry: PublicCatalog) -> int:
     try:
         collections_for_new_catalog: List[
             Dict[any, any]] = _get_all_available_collections_from_public_catalog(public_catalog_entry)
-        # for each new collection, store it in the database
         for collection in collections_for_new_catalog:
-            # get a public_collection object using public_catalog_entry id and collection id
             public_collection: PublicCollection
             public_collection: PublicCollection = PublicCollection.query.filter_by(
                 parent_catalog=public_catalog_entry.id, id=collection['id']).first()
@@ -235,7 +224,6 @@ def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], ti
     else:
         pass
     data = a.all()
-    # group data by parent_catalog parameter
     grouped_data = {}
     for item in data:
         item: PublicCollection
