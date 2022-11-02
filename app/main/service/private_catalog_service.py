@@ -17,7 +17,7 @@ from ..util.process_timestamp import *
 def _does_collection_exist_in_database(collection_id: str) -> bool:
     """Check if a collection exists in the database.
 
-    :param collection_id: Collection ID to check.
+    :param: collection_id: Collection ID to check.
     :return: True if collection exists, False otherwise.
     """
     return PrivateCollection.query.filter_by(id=collection_id).first() is not None

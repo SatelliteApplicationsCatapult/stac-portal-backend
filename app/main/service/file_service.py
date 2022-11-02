@@ -59,7 +59,7 @@ def return_file_url(filename: str):
             container=container_name, blob=filename
         )
         return blob_client.url
-    except azure.core.exceptions.ResourceNotFoundError as e:
+    except azure.core.exceptions.ResourceNotFoundError:
         blob_service_client.close()
         raise FileNotFoundError
     finally:
