@@ -133,10 +133,8 @@ def _store_collections(public_catalog_entry: PublicCatalog) -> int:
                 parent_catalog=public_catalog_entry.id, id=collection['id']).first()
             if public_collection:
                 pass
-                logging.log("Updating collection: " + collection['id'])
 
             else:
-                logging.log("Creating new collection: " + collection['id'])
                 public_collection: PublicCollection = PublicCollection()
                 public_collection.id = collection['id']
             try:
@@ -171,7 +169,7 @@ def _store_collections(public_catalog_entry: PublicCatalog) -> int:
     except ConvertingTimestampError:
         db.session.commit()
         raise ConvertingTimestampError
-    except KeyError as e:
+    except KeyError:
         db.session.commit()
 
     return count_added
@@ -358,7 +356,7 @@ def remove_public_catalog_via_catalog_id(public_catalog_id: int) -> Dict[any, an
         db.session.delete(a)
         db.session.commit()
         return a.as_dict()
-    except sqlalchemy.orm.exc.UnmappedInstanceError as e:
+    except sqlalchemy.orm.exc.UnmappedInstanceError:
         raise CatalogDoesNotExistError
 
 
@@ -402,7 +400,6 @@ def update_specific_collections_via_catalog_id(catalog_id: int,
     :param collections: List of collection ids to update
     :return: Updated collection ids
     """
-    logging.log("Updating collections for catalogue id: " + str(catalog_id))
     public_catalogue_entry: PublicCatalog = PublicCatalog.query.filter_by(
         id=catalog_id).first()
 

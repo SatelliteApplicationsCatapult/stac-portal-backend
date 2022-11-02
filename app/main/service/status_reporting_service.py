@@ -7,7 +7,7 @@ from ..model.status_reporting_model import StacIngestionStatus
 
 
 def get_all_stac_ingestion_statuses() -> List[Dict[any, any]]:
-    a: StacIngestionStatus = StacIngestionStatus.query.all()
+    a: [StacIngestionStatus] = StacIngestionStatus.query.all()
     return [i.as_dict() for i in a]
 
 
