@@ -23,7 +23,18 @@ class GetSasToken(Resource):
     @api.doc(description="Get a SAS token for the blob")
     @api.response(200, "Success")
     def get(self, filename):
-        sas_token, endpoint = get_sas_token(filename)
+        sas_token, endpoint = get_write_sas_token(filename)
+
+        return {"sas_token": sas_token,
+                "endpoint": endpoint}, 200
+
+
+@api.route("/sas_token_read/<filename>/")
+class GetReadSasToken(Resource):
+    @api.doc(description="Get a SAS token for the blob")
+    @api.response(200, "Success")
+    def get(self, filename):
+        sas_token, endpoint = get_read_sas_token(filename)
 
         return {"sas_token": sas_token,
                 "endpoint": endpoint}, 200
