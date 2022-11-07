@@ -30,11 +30,11 @@ class PublicCatalogs(Resource):
             description = data['description']
             return public_catalogs_service.store_new_public_catalog(
                 name, url, description), 201
-        except IndexError as e:
+        except IndexError:
             return {
                        'message': 'Some elements in json body are not present',
                    }, 400
-        except CatalogAlreadyExistsError as e:
+        except CatalogAlreadyExistsError:
             return {
                        'message': 'Catalog with this url already exists',
                    }, 409
@@ -165,7 +165,7 @@ class PublicCatalogsViaId(Resource):
         try:
             return public_catalogs_service.remove_public_catalog_via_catalog_id(
                 public_catalog_id)
-        except CatalogDoesNotExistError as e:
+        except CatalogDoesNotExistError:
             return {'message': 'No result found'}, 404
 
 
@@ -180,9 +180,9 @@ class GetStacRecordsSpecifyingPublicCatalogId(Resource):
         try:
             return public_catalogs_service.load_specific_collections_via_catalog_id(
                 public_catalog_id, data), 200
-        except CatalogDoesNotExistError as e:
+        except CatalogDoesNotExistError:
             return {'message': 'Public catalog not found'}, 404
-        except ConnectionError as e:
+        except ConnectionError:
             return {
                        'message':
                            'Connection Error, ingestion microservice is probably down'
@@ -203,7 +203,7 @@ class UpdateAllStacRecords(Resource):
                     "operation_number": i,
                 })
             return response, 200
-        except ConnectionError as e:
+        except ConnectionError:
             return {
                        'message':
                            'Connection Error, ingestion microservice is probably down'
@@ -222,7 +222,7 @@ class UpdateStacRecordsSpecifyingPublicCatalogId(Resource):
                 public_catalog_id)
         except CatalogDoesNotExistError:
             return {'message': 'Public catalog not found'}, 404
-        except ConnectionError as e:
+        except ConnectionError:
             return {
                        'message':
                            'Connection Error, ingestion microservice is probably down'
@@ -244,11 +244,11 @@ class UpdateStacRecordsSpecifyingPublicCatalogId(Resource):
                     "message": i,
                 })
             return response, 200
-        except CatalogDoesNotExistError as e:
+        except CatalogDoesNotExistError:
             return {
                        'message': 'Public catalog with specified id not found'
                    }, 404
-        except ConnectionError as e:
+        except ConnectionError:
             return {
                        'message':
                            'Connection Error, ingestion microservice is probably down'

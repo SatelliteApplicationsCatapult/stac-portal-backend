@@ -12,7 +12,7 @@ class StacIngestionStatus(db.Model):
     source_stac_api_url: str = db.Column(db.Text, db.ForeignKey('public_catalogs.url', ondelete='CASCADE'), index=True)
     target_stac_api_url: str = db.Column(db.Text, nullable=True)
     update: bool = db.Column(db.Boolean, default=False)
-    error_message: str = db.Column(db.Text, nullable=True,default="")
+    error_message: str = db.Column(db.Text, nullable=True, default="")
     newly_stored_collections_count: int = db.Column(db.Integer,
                                                     nullable=True,
                                                     default=0)

@@ -17,7 +17,7 @@ from ..util.process_timestamp import *
 def _does_collection_exist_in_database(collection_id: str) -> bool:
     """Check if a collection exists in the database.
 
-    :param collection_id: Collection ID to check.
+    :param: collection_id: Collection ID to check.
     :return: True if collection exists, False otherwise.
     """
     return PrivateCollection.query.filter_by(id=collection_id).first() is not None
@@ -61,8 +61,6 @@ def add_collection(collection: Dict[str, any]) -> Dict[str, any]:
             db.session.commit()
             return status
         except CollectionAlreadyExistsError:
-            # it doesnt exist in database, but is present on stac server, store it in database
-            # and update on stac-fastapi
             status = update_existing_collection_on_stac_api(collection)
             db.session.commit()
             return status
@@ -116,15 +114,13 @@ def remove_collection(collection_id: str) -> Dict[str, any]:
 
 
 def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], time_interval_timestamp: str,
-                         ) -> dict[str, any] or list[any]:
+                       ) -> dict[str, any] or list[any]:
     if isinstance(bbox, list):
         bbox = shapely.geometry.box(*bbox)
     a = db.session.query(PrivateCollection).filter(PrivateCollection.spatial_extent.ST_Intersects(
         f"SRID=4326;{bbox.wkt}"))
 
     time_start, time_end = process_timestamp.process_timestamp_dual_string(time_interval_timestamp)
-    print("Time start: " + str(time_start))
-    print("Time end: " + str(time_end))
     if time_start:
         a = a.filter(
             or_(PrivateCollection.temporal_extent_start == None, PrivateCollection.temporal_extent_start <= time_start))
@@ -133,7 +129,6 @@ def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], ti
             or_(PrivateCollection.temporal_extent_end == None, PrivateCollection.temporal_extent_end >= time_end
                 ))
     data = a.all()
-    # group data by parent_catalog parameter
     grouped_data = []
     for item in data:
         item: PrivateCollection
@@ -143,7 +138,6 @@ def search_collections(bbox: shapely.geometry.polygon.Polygon or list[float], ti
 
 def get_all_collections():
     data = db.session.query(PrivateCollection).all()
-    # group data by parent_catalog parameter
     grouped_data = []
     for item in data:
         item: PrivateCollection

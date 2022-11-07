@@ -7,7 +7,7 @@ from ..model.status_reporting_model import StacIngestionStatus
 
 
 def get_all_stac_ingestion_statuses() -> List[Dict[any, any]]:
-    a: StacIngestionStatus = StacIngestionStatus.query.all()
+    a: [StacIngestionStatus] = StacIngestionStatus.query.all()
     return [i.as_dict() for i in a]
 
 
@@ -24,8 +24,6 @@ def make_stac_ingestion_status_entry(source_stac_api_url: str,
 
     if public_catalogue_entry is None:
         raise ValueError("Target STAC API URL not found in public catalogs.")
-    # stac_search_parameters: StoredSearchParameters = StoredSearchParameters()
-    # stac_search_parameters.associated_catalog_id = public_catalogue_entry.id
     stac_ingestion_status: StacIngestionStatus = StacIngestionStatus()
     stac_ingestion_status.source_stac_api_url = source_stac_api_url
     stac_ingestion_status.target_stac_api_url = target_stac_api_url
@@ -43,9 +41,7 @@ def set_stac_ingestion_status_entry(
         updated_items_count: int = 0,
         already_stored_items_count: int = 0,
         error_message=None) -> Tuple[Dict[any, any]]:
-    # get StacIngestionStatus object with id = status_id
     a: StacIngestionStatus = StacIngestionStatus.query.get(status_id)
-    # update the object
     a.newly_stored_collections_count = newly_stored_collections_count
     if newly_stored_collections is not None:
         a.newly_stored_collections = ",".join(newly_stored_collections)

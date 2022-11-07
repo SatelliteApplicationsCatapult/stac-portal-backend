@@ -1,6 +1,6 @@
+from flask import request
 from flask_restx import Resource
 from werkzeug.utils import secure_filename
-from flask import request
 
 from ..service.file_service import *
 from ..util.dto import FileDto, FilesDto
@@ -23,7 +23,18 @@ class GetSasToken(Resource):
     @api.doc(description="Get a SAS token for the blob")
     @api.response(200, "Success")
     def get(self, filename):
-        sas_token, endpoint = get_sas_token(filename)
+        sas_token, endpoint = get_write_sas_token(filename)
+
+        return {"sas_token": sas_token,
+                "endpoint": endpoint}, 200
+
+
+@api.route("/sas_token_read/<filename>/")
+class GetReadSasToken(Resource):
+    @api.doc(description="Get a SAS token for the blob")
+    @api.response(200, "Success")
+    def get(self, filename):
+        sas_token, endpoint = get_read_sas_token(filename)
 
         return {"sas_token": sas_token,
                 "endpoint": endpoint}, 200
@@ -63,7 +74,6 @@ class RetrieveStacAssets(Resource):
             return {"message": "File not found"}, 404
 
 
-# This takes multiple files and uploads them to the blob
 @api.route("/stac_assets/upload/")
 class Upload(Resource):
     @files_api.doc(description="Upload stac assets to the azure storage blob")
@@ -73,7 +83,7 @@ class Upload(Resource):
     def post(self):
         try:
             item_ids = request.form["itemIds"].split(",")
-        except:
+        except KeyError:
             return {"message": "No item ids provided"}, 400
 
         for i in range(len(item_ids)):

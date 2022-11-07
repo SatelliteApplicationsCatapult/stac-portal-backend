@@ -54,48 +54,48 @@ class PrivateCatalogDto:
             "license": fields.String(
                 required=True, description="collection license", example="proprietary"
             ),
-            "extent": fields.Nested(
-                api.model(
-                    "extent",
-                    {
-                        "spatial": fields.Nested(
-                            api.model(
-                                "spatial",
-                                {
-                                    "bbox": fields.List(
-                                        fields.List(fields.Float),
-                                        required=True,
-                                        description="bbox",
-                                        example=[[-180, -90, 180, 90]],
-                                    )
-                                },
-                            ),
-                            required=True,
-                            description="spatial",
-                        ),
-                        "temporal": fields.Nested(
-                            api.model(
-                                "temporal",
-                                {
-                                    "interval": fields.List(
-                                        fields.List(fields.String),
-                                        required=True,
-                                        description="interval",
-                                        example=[
-                                            [
-                                                "2021-05-05T00:00:00Z",
-                                                "2022-05-05T00:00:00Z",
-                                            ]
-                                        ],
-                                    ),
-                                },
-                            )
-                        ),
-                    },
-                ),
-                required=True,
-                description="spatial and temporal extent",
-            ),
+            # "extent": fields.Nested(
+            #     api.model(
+            #         "extent",
+            #         {
+            #             "spatial": fields.Nested(
+            #                 api.model(
+            #                     "spatial",
+            #                     {
+            #                         "bbox": fields.List(
+            #                             fields.List(fields.Float),
+            #                             required=True,
+            #                             description="bbox",
+            #                             example=[[-180, -90, 180, 90]],
+            #                         )
+            #                     },
+            #                 ),
+            #                 required=True,
+            #                 description="spatial",
+            #             ),
+            #             "temporal": fields.Nested(
+            #                 api.model(
+            #                     "temporal",
+            #                     {
+            #                         "interval": fields.List(
+            #                             fields.List(any),
+            #                             required=True,
+            #                             description="interval",
+            #                             example=[
+            #                                 [
+            #                                     "2021-05-05T00:00:00Z",
+            #                                     "2022-05-05T00:00:00Z",
+            #                                 ]
+            #                             ],
+            #                         ),
+            #                     },
+            #                 )
+            #             ),
+            #         },
+            #     ),
+            #     required=True,
+            #     description="spatial and temporal extent",
+            # ),
         },
     )
     item_dto = api.model(
