@@ -10,7 +10,7 @@ from ..custom_exceptions import *
 
 
 def get_all_collections() -> dict[str, any]:
-    response = requests.get(urljoin(current_app.config["TARGET_STAC_API_SERVER"], "collections/"))
+    response = requests.get(urljoin(current_app.config["READ_STAC_API_SERVER"], "collections/"))
     if response.status_code in range(200, 203):
         collection_json = response.json()
         public_collections: [] = public_catalogs_service.get_public_collections()
@@ -32,7 +32,7 @@ def get_all_collections() -> dict[str, any]:
 
 def get_collection_by_id(
         collection_id: str) -> dict[str, any]:
-    response = requests.get(urljoin(current_app.config["TARGET_STAC_API_SERVER"], "collections/") + collection_id)
+    response = requests.get(urljoin(current_app.config["READ_STAC_API_SERVER"], "collections/") + collection_id)
     if response.status_code in range(200, 203):
         collection_json = response.json()
         return collection_json
@@ -49,7 +49,7 @@ def get_collection_by_id(
 def get_items_by_collection_id(
         collection_id: str) -> dict[str, any]:
     response = requests.get(
-        urljoin(current_app.config["TARGET_STAC_API_SERVER"], "collections/") + collection_id + "/items")
+        urljoin(current_app.config["READ_STAC_API_SERVER"], "collections/") + collection_id + "/items")
 
     if response.status_code in range(200, 203):
         collection_json = response.json()
@@ -68,7 +68,7 @@ def get_item_from_collection(
         collection_id: str,
         item_id: str) -> dict[str, any]:
     response = requests.get(
-        urljoin(current_app.config["TARGET_STAC_API_SERVER"], "collections/") + collection_id + "/items/" + item_id)
+        urljoin(current_app.config["READ_STAC_API_SERVER"], "collections/") + collection_id + "/items/" + item_id)
 
     if response.status_code in range(200, 203):
         collection_json = response.json()
@@ -91,7 +91,7 @@ def get_item_from_collection(
 def create_new_collection_on_stac_api(
         collection_data: Dict[str,
                               any]) -> dict[str, any]:
-    response = requests.post(urljoin(current_app.config["TARGET_STAC_API_SERVER"], "collections/"),
+    response = requests.post(urljoin(current_app.config["WRITE_STAC_API_SERVER"], "collections/"),
                              json=collection_data)
 
     if response.status_code in range(200, 203):
@@ -110,7 +110,7 @@ def create_new_collection_on_stac_api(
 def update_existing_collection_on_stac_api(
         collection_data: Dict[str,
                               any]) -> dict[str, any]:
-    response = requests.put(urljoin(current_app.config["TARGET_STAC_API_SERVER"], "collections/"), json=collection_data)
+    response = requests.put(urljoin(current_app.config["WRITE_STAC_API_SERVER"], "collections/"), json=collection_data)
 
     if response.status_code in range(200, 203):
         collection_json = response.json()
@@ -140,7 +140,7 @@ def remove_public_collection_by_id_on_stac_api(
     :param collection_id: Collection ID to remove.
     :return: Either a tuple containing stac server response and status code, or a Response object.
     """
-    response = requests.delete(urljoin(current_app.config["TARGET_STAC_API_SERVER"], "collections/") + collection_id)
+    response = requests.delete(urljoin(current_app.config["WRITE_STAC_API_SERVER"], "collections/") + collection_id)
 
     public_catalogs_service.remove_search_params_for_collection_id(
         collection_id)
@@ -158,7 +158,7 @@ def remove_public_collection_by_id_on_stac_api(
 
 
 def remove_private_collection_by_id_on_stac_api(collection_id: str) -> Dict[str, any]:
-    response = requests.delete(urljoin(current_app.config["TARGET_STAC_API_SERVER"], "collections/") + collection_id)
+    response = requests.delete(urljoin(current_app.config["WRITE_STAC_API_SERVER"], "collections/") + collection_id)
     if response.status_code in range(200, 203):
         collection_json = response.json()
         return collection_json
@@ -176,7 +176,7 @@ def add_item_to_collection_on_stac_api(
         collection_id: str,
         item_data: Dict[str, any]) -> Dict[str, any]:
     response = requests.post(
-        urljoin(current_app.config["TARGET_STAC_API_SERVER"], "collections/") + collection_id + "/items",
+        urljoin(current_app.config["WRITE_STAC_API_SERVER"], "collections/") + collection_id + "/items",
         json=item_data, headers={"Content-Type": "application/json"})
 
     if response.status_code in range(200, 203):
@@ -200,7 +200,7 @@ def update_item_in_collection_on_stac_api(
         collection_id: str, item_id: str,
         item_data: Dict[str, any]) -> Tuple[Dict[str, any], int] or Response:
     response = requests.put(
-        urljoin(current_app.config["TARGET_STAC_API_SERVER"], "collections/") + collection_id + "/items/" +
+        urljoin(current_app.config["WRITE_STAC_API_SERVER"], "collections/") + collection_id + "/items/" +
         item_id,
         json=item_data)
 
@@ -223,7 +223,7 @@ def remove_item_from_collection_on_stac_api(
         collection_id: str,
         item_id: str) -> Tuple[Dict[str, any], int] or Response:
     response = requests.delete(
-        urljoin(current_app.config["TARGET_STAC_API_SERVER"], "collections/") + collection_id + "/items/" + item_id)
+        urljoin(current_app.config["WRITE_STAC_API_SERVER"], "collections/") + collection_id + "/items/" + item_id)
 
     if response.status_code in range(200, 203):
         collection_json = response.json()
