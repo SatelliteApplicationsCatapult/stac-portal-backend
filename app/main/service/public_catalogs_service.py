@@ -375,7 +375,7 @@ def load_specific_collections_via_catalog_id(catalog_id: int,
     if parameters is None:
         parameters = {}
     parameters['source_stac_catalog_url'] = public_catalogue_entry.url
-    target_stac_api_url = current_app.config['TARGET_STAC_API_SERVER']
+    target_stac_api_url = current_app.config['WRITE_STAC_API_SERVER']
     _store_search_parameters(catalog_id, parameters)
     parameters["target_stac_catalog_url"] = target_stac_api_url
     return _call_ingestion_microservice(parameters)
@@ -442,7 +442,7 @@ def _call_ingestion_microservice(parameters) -> int:
     :return: Work session id which can be used to check the status of the ingestion
     """
     souce_stac_catalog_url = parameters['source_stac_catalog_url']
-    target_stac_catalog_url = current_app.config['TARGET_STAC_API_SERVER']
+    target_stac_catalog_url = current_app.config['READ_STAC_API_SERVER']
     update = parameters['update']
     callback_id = make_stac_ingestion_status_entry(souce_stac_catalog_url, target_stac_catalog_url, update)
     parameters['callback_id'] = callback_id
@@ -582,7 +582,7 @@ def _run_ingestion_task_force_update(
     for i in stored_search_parameters:
         try:
             used_search_parameters = json.loads(i.used_search_parameters)
-            used_search_parameters["target_stac_catalog_url"] = current_app.config["TARGET_STAC_API_SERVER"]
+            used_search_parameters["target_stac_catalog_url"] = current_app.config["READ_STAC_API_SERVER"]
             used_search_parameters["update"] = True
             microservice_response = _call_ingestion_microservice(
                 used_search_parameters)
@@ -644,7 +644,7 @@ def run_search_parameters(parameter_id: int) -> int:
         raise StoredSearchParametersDoesNotExistError
     try:
         used_search_parameters = json.loads(stored_search_parameters.used_search_parameters)
-        used_search_parameters["target_stac_catalog_url"] = current_app.config["TARGET_STAC_API_SERVER"]
+        used_search_parameters["target_stac_catalog_url"] = current_app.config["READ_STAC_API_SERVER"]
         used_search_parameters["update"] = True
         microservice_response = _call_ingestion_microservice(used_search_parameters)
         return microservice_response

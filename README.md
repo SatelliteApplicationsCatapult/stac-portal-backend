@@ -16,7 +16,8 @@ from Dockerfile_dev and Dockerfile_prod.
 | SECRET_KEY | Secret key for flask app. |
 | DEBUG | Flask debug flag. |
 | SQLALCHEMY_DATABASE_URI | Sqlalchemy string pointing to Postgres database. |
-| TARGET_STAC_API_SERVER | Endpoint for the stac-fastapi instance. |
+| READ_STAC_API_SERVER | Endpoint for the stac-fastapi instance used for read operations. |
+| WRITE_STAC_API_SERVER | Endpoint for the stac-fastapi instance used for write operations. |
 | STAC_VALIDATOR_ENDPOINT | Endpoint for the stac validator microservice. |
 | STAC_SELECTIVE_INGESTER_ENDPOINT | Endpoint for the stac selective ingester endpoint. |
 | GDAL_INFO_API_ENDPOINT | Endpoint for the gdal info api microservice endpoint. |
