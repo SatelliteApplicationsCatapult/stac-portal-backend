@@ -23,6 +23,8 @@ class DevelopmentConfig(Config):
     STAC_SELECTIVE_INGESTER_ENDPOINT = os.getenv('STAC_SELECTIVE_INGESTER_ENDPOINT', "http://localhost:7001")
     GDAL_INFO_API_ENDPOINT = os.getenv('GDAL_INFO_API_ENDPOINT',
                                        "https://ctplt-pda-rg-dev-gdal-info-api.azurewebsites.net")
+    AZURE_STORAGE_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING',
+                                                "")
 
 
 class StagingConfig(Config):
