@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+import mimetypes
 
 import pystac
 from flask import current_app
@@ -49,7 +50,7 @@ def create_STAC_Item(metadata):
     if metadata["staticVariables"]["provider"] == "Planet":
         planet_stac_parser(properties, metadata["additional"])
     elif metadata["staticVariables"]["provider"] == "Maxar":
-        maxar_stac_parser(properties, metadata["additional"])
+        maxar_stac_parser(properties, metadata)
 
     # Instantiate pystac item
     item = pystac.Item(
@@ -77,10 +78,8 @@ def create_STAC_Item(metadata):
         # Remove extension from asset name
         name = re.sub(r"\.[^.]*$", "", asset["filename"])
 
-        href = asset["href"],
+        href = (asset["href"],)
         href = href[0]
-        print("Href is: ", href)
-        print("Href type is: ", type(href))
 
         # if the href does not begin with blob_url, prepend it
         if not href.startswith(blob_url):
@@ -88,6 +87,7 @@ def create_STAC_Item(metadata):
             if not href.startswith("/"):
                 href = "/" + href
             href = blob_url + href
+
         item.add_asset(
             key=name,
             asset=pystac.Asset(
@@ -101,14 +101,33 @@ def create_STAC_Item(metadata):
             ),
         )
 
+    # Generate thumbnail
+    thumbnail = generate_thumbnail(metadata)
+    thumbnail_href = generate_url(
+        thumbnail["name"],
+        metadata["staticVariables"]["url"].split("/")[0:-1],
+        account_name,
+        endpoint_suffix,
+    )
+    item.add_asset(
+        key="thumbnail",
+        asset=pystac.Asset(
+            href=thumbnail_href,
+            media_type=thumbnail["type"],
+        ),
+    )
+
     for other_asset in metadata["otherAssets"]:
-        url = metadata["staticVariables"]["url"].split("/")[0:-1]
-        href = "/".join(url) + "/" + other_asset["name"]
-        if not href.startswith(blob_url):
-            # if href starts does not start with slash add it
-            if not href.startswith("/"):
-                href = "/" + href
-            href = blob_url + href
+        href = generate_url(
+            other_asset["name"],
+            metadata["staticVariables"]["url"].split("/")[0:-1],
+            account_name,
+            endpoint_suffix,
+        )
+
+        if not other_asset["type"]:
+            other_asset["type"] = mimetypes.guess_type(other_asset["name"])[0]
+
         item.add_asset(
             key=other_asset["name"],
             asset=pystac.Asset(
@@ -203,44 +222,46 @@ def planet_stac_parser(properties, metadata):
 
 
 def maxar_stac_parser(properties, metadata):
-    """Parse Maxar STAC metadata"""
+    """Parse Maxar STAC metadata['additional']"""
     # Cloud Cover
-    if metadata["README"].get("CLOUDCOVER") != None:
-        properties["eo:cloud_cover"] = float(metadata["README"]["CLOUDCOVER"])
-
-    # Thumbnail
+    if metadata["additional"]["README"].get("CLOUDCOVER") != None:
+        properties["eo:cloud_cover"] = float(
+            metadata["additional"]["README"]["CLOUDCOVER"]
+        )
 
     # View additions
     try:
-        if metadata["delivery"]["message"]["DeliveryMetadata"]["product"]["sunAzimuth"]:
+        if metadata["additional"]["delivery"]["message"]["Deliverymetadata"]["product"][
+            "sunAzimuth"
+        ]:
             properties["view:sun_azimuth"] = float(
-                metadata["delivery"]["message"]["DeliveryMetadata"]["product"][
-                    "sunAzimuth"
-                ]
+                metadata["additional"]["delivery"]["message"]["Deliverymetadata"][
+                    "product"
+                ]["sunAzimuth"]
             )
     except:
         pass
 
     try:
-        if metadata["delivery"]["message"]["DeliveryMetadata"]["product"][
+        if metadata["additional"]["delivery"]["message"]["Deliverymetadata"]["product"][
             "sunElevation"
         ]:
             properties["view:sun_elevation"] = float(
-                metadata["delivery"]["message"]["DeliveryMetadata"]["product"][
-                    "sunElevation"
-                ]
+                metadata["additional"]["delivery"]["message"]["Deliverymetadata"][
+                    "product"
+                ]["sunElevation"]
             )
     except:
         pass
 
     try:
-        if metadata["delivery"]["message"]["DeliveryMetadata"]["product"][
+        if metadata["additional"]["delivery"]["message"]["Deliverymetadata"]["product"][
             "offNadirAngle"
         ]:
             properties["view:off_nadir"] = float(
-                metadata["delivery"]["message"]["DeliveryMetadata"]["product"][
-                    "offNadirAngle"
-                ]
+                metadata["additional"]["delivery"]["message"]["Deliverymetadata"][
+                    "product"
+                ]["offNadirAngle"]
             )
     except:
         pass
@@ -254,3 +275,28 @@ def configure_extensions(item, properties):
         item.stac_extensions.append(stac_extensions["view"])
     if any(key.startswith("proj:") for key in properties):
         item.stac_extensions.append(stac_extensions["proj"])
+
+
+def generate_thumbnail(metadata):
+    """Generate a thumbnail"""
+    # Maxar
+    thumbnail = [
+        asset
+        for asset in metadata["otherAssets"]
+        if asset["type"] == "image/jpeg" and "BROWSE" in asset["name"]
+    ]
+
+    return thumbnail[0] if thumbnail else None
+
+
+def generate_url(item_name, base_url, account_name, endpoint_suffix):
+    blob_url = f"https://{account_name}.blob.{endpoint_suffix}"
+
+    href = "/".join(base_url) + "/" + item_name
+    if not href.startswith(blob_url):
+        # if href starts does not start with slash add it
+        if not href.startswith("/"):
+            href = "/" + href
+        href = blob_url + href
+
+    return href
