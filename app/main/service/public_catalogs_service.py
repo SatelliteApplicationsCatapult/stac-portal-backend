@@ -442,7 +442,7 @@ def _call_ingestion_microservice(parameters) -> int:
     :return: Work session id which can be used to check the status of the ingestion
     """
     souce_stac_catalog_url = parameters['source_stac_catalog_url']
-    target_stac_catalog_url = current_app.config['READ_STAC_API_SERVER']
+    target_stac_catalog_url = current_app.config['WRITE_STAC_API_SERVER']
     update = parameters['update']
     callback_id = make_stac_ingestion_status_entry(souce_stac_catalog_url, target_stac_catalog_url, update)
     parameters['callback_id'] = callback_id
