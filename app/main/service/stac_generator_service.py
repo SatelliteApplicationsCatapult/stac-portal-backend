@@ -207,8 +207,10 @@ def planet_stac_parser(properties, metadata):
         properties["gsd"] = planet_properties["gsd"]
 
     # EO Additions
-    if planet_properties.get("cloud_cover") != None:
-        properties["eo:cloud_cover"] = planet_properties["cloud_cover"]
+        
+    ## eo:cloud_cover is expecting a %, so take from the cloud_percent field in planet, rather than the cloud_cover which is 0-1    
+    if planet_properties.get("cloud_percent") != None:
+        properties["eo:cloud_cover"] = planet_properties["cloud_percent"]
 
     # View Additions
     if planet_properties.get("sun_elevation"):
