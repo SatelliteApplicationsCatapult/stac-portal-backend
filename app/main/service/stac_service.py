@@ -10,9 +10,7 @@ from ..custom_exceptions import *
 
 
 def get_all_collections() -> dict[str, any]:
-    print('Making request to ', urljoin(current_app.config["READ_STAC_API_SERVER"], "collections/"))
     response = requests.get(urljoin(current_app.config["READ_STAC_API_SERVER"], "collections/"))
-    print(response)
     if response.status_code in range(200, 203):
         collection_json = response.json()
         public_collections: [] = public_catalogs_service.get_public_collections()
@@ -27,7 +25,6 @@ def get_all_collections() -> dict[str, any]:
                 collection["management_metadata"]["is_public"] = False
         return collection_json
     else:
-        
         resp = response.json()
         resp["error_code"] = response.status_code
         return resp
