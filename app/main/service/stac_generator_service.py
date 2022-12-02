@@ -47,10 +47,8 @@ def create_STAC_Item(metadata):
         "proj:epsg": src_crs,
     }
     # Call the appropriate parser to extend the properties
-    if metadata["staticVariables"]["provider"] == "Planet":
-        planet_stac_parser(properties, metadata["additional"])
-    elif metadata["staticVariables"]["provider"] == "Maxar":
-        maxar_stac_parser(properties, metadata)
+
+    additional_stac_parser(properties, metadata)
 
     # Instantiate pystac item
     item = pystac.Item(
@@ -103,19 +101,21 @@ def create_STAC_Item(metadata):
 
     # Generate thumbnail
     thumbnail = generate_thumbnail(metadata)
-    thumbnail_href = generate_url(
-        thumbnail["name"],
-        metadata["staticVariables"]["url"].split("/")[0:-1],
-        account_name,
-        endpoint_suffix,
-    )
-    item.add_asset(
-        key="thumbnail",
-        asset=pystac.Asset(
-            href=thumbnail_href,
-            media_type=thumbnail["type"],
-        ),
-    )
+    if thumbnail:
+        thumbnail_href = generate_url(
+            thumbnail["name"],
+            metadata["staticVariables"]["url"].split("/")[0:-1],
+            account_name,
+            endpoint_suffix,
+        )
+
+        item.add_asset(
+            key="thumbnail",
+            asset=pystac.Asset(
+                href=thumbnail_href,
+                media_type=thumbnail["type"],
+            ),
+        )
 
     for other_asset in metadata["otherAssets"]:
         href = generate_url(
@@ -199,71 +199,42 @@ def return_bbox_from_coordinates(geom, src_crs, destination_crs):
     )
     return [left, bottom, right, top]
 
-
-def planet_stac_parser(properties, metadata):
-    """Parse Planet STAC metadata"""
-    planet_properties = metadata["properties"]
-    if planet_properties.get("gsd"):
-        properties["gsd"] = planet_properties["gsd"]
-
-    # EO Additions
-    if planet_properties.get("cloud_cover") != None:
-        properties["eo:cloud_cover"] = planet_properties["cloud_cover"]
-
-    # View Additions
-    if planet_properties.get("sun_elevation"):
-        properties["view:sun_elevation"] = planet_properties["sun_elevation"]
-    if planet_properties.get("sun_azimuth"):
-        properties["view:sun_azimuth"] = planet_properties["sun_azimuth"]
-    if planet_properties.get("view_angle"):
-        properties["view:off_nadir"] = planet_properties["view_angle"]
-
     # Thumbnail
 
 
-def maxar_stac_parser(properties, metadata):
+def additional_stac_parser(properties, metadata):
     """Parse Maxar STAC metadata['additional']"""
     # Cloud Cover
-    if metadata["additional"]["README"].get("CLOUDCOVER") != None:
-        properties["eo:cloud_cover"] = float(
-            metadata["additional"]["README"]["CLOUDCOVER"]
-        )
+    if metadata["additional"].get("cloudCover") != None:
+        properties["eo:cloud_cover"] = float(metadata["additional"]["cloudCover"])
 
     # View additions
     try:
-        if metadata["additional"]["delivery"]["message"]["Deliverymetadata"]["product"][
-            "sunAzimuth"
-        ]:
-            properties["view:sun_azimuth"] = float(
-                metadata["additional"]["delivery"]["message"]["Deliverymetadata"][
-                    "product"
-                ]["sunAzimuth"]
-            )
-    except:
+        if metadata["additional"]["sunAzimuth"] != None:
+            properties["view:sun_azimuth"] = float(metadata["additional"]["sunAzimuth"])
+    except Exception:
         pass
 
     try:
-        if metadata["additional"]["delivery"]["message"]["Deliverymetadata"]["product"][
-            "sunElevation"
-        ]:
+        if metadata["additional"]["sunElevation"]:
             properties["view:sun_elevation"] = float(
-                metadata["additional"]["delivery"]["message"]["Deliverymetadata"][
-                    "product"
-                ]["sunElevation"]
+                metadata["additional"]["sunElevation"]
             )
-    except:
+    except Exception:
         pass
 
     try:
-        if metadata["additional"]["delivery"]["message"]["Deliverymetadata"]["product"][
-            "offNadirAngle"
-        ]:
+        if metadata["additional"]["offNadirAngle"]:
             properties["view:off_nadir"] = float(
-                metadata["additional"]["delivery"]["message"]["Deliverymetadata"][
-                    "product"
-                ]["offNadirAngle"]
+                metadata["additional"]["offNadirAngle"]
             )
-    except:
+    except Exception:
+        pass
+
+    try:
+        if metadata["additional"]["gsd"]:
+            properties["gsd"] = float(metadata["additional"]["gsd"])
+    except Exception:
         pass
 
 
