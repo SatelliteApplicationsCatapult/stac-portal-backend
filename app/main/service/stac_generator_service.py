@@ -199,6 +199,27 @@ def return_bbox_from_coordinates(geom, src_crs, destination_crs):
     )
     return [left, bottom, right, top]
 
+
+def planet_stac_parser(properties, metadata):
+    """Parse Planet STAC metadata"""
+    planet_properties = metadata["properties"]
+    if planet_properties.get("gsd"):
+        properties["gsd"] = planet_properties["gsd"]
+
+    # EO Additions
+        
+    ## eo:cloud_cover is expecting a %, so take from the cloud_percent field in planet, rather than the cloud_cover which is 0-1    
+    if planet_properties.get("cloud_percent") != None:
+        properties["eo:cloud_cover"] = planet_properties["cloud_percent"]
+
+    # View Additions
+    if planet_properties.get("sun_elevation"):
+        properties["view:sun_elevation"] = planet_properties["sun_elevation"]
+    if planet_properties.get("sun_azimuth"):
+        properties["view:sun_azimuth"] = planet_properties["sun_azimuth"]
+    if planet_properties.get("view_angle"):
+        properties["view:off_nadir"] = planet_properties["view_angle"]
+
     # Thumbnail
 
 
